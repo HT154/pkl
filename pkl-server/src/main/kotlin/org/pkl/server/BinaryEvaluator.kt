@@ -73,21 +73,25 @@ internal class BinaryEvaluator(
 
   private class ValueEncoder(private val packer: MessagePacker) : VmValueVisitor {
     companion object {
-      private const val CODE_OBJECT: Byte = 0x1
-      private const val CODE_MAP: Byte = 0x2
-      private const val CODE_MAPPING: Byte = 0x3
-      private const val CODE_LIST: Byte = 0x4
-      private const val CODE_LISTING: Byte = 0x5
-      private const val CODE_SET: Byte = 0x6
-      private const val CODE_DURATION: Byte = 0x7
-      private const val CODE_DATASIZE: Byte = 0x8
-      private const val CODE_PAIR: Byte = 0x9
-      private const val CODE_INTSEQ: Byte = 0xA
-      private const val CODE_REGEX: Byte = 0xB
-      private const val CODE_CLASS: Byte = 0xC
-      private const val CODE_TYPEALIAS: Byte = 0xD
-      private const val CODE_FUNCTION: Byte = 0xE
-      private const val CODE_BYTES: Byte = 0xF
+      private const val CODE_OBJECT: Byte = 0x01
+      private const val CODE_MAP: Byte = 0x02
+      private const val CODE_MAPPING: Byte = 0x03
+      private const val CODE_LIST: Byte = 0x04
+      private const val CODE_LISTING: Byte = 0x05
+      private const val CODE_SET: Byte = 0x06
+      private const val CODE_DURATION: Byte = 0x07
+      private const val CODE_DATASIZE: Byte = 0x08
+      private const val CODE_PAIR: Byte = 0x09
+      private const val CODE_INTSEQ: Byte = 0x0A
+      private const val CODE_REGEX: Byte = 0x0B
+      private const val CODE_CLASS: Byte = 0x0C
+      private const val CODE_TYPEALIAS: Byte = 0x0D
+      private const val CODE_FUNCTION: Byte = 0x0E
+      private const val CODE_BYTES: Byte = 0x0F
+      private const val CODE_REFERENCE: Byte = 0x20
+      private const val CODE_REFERENCE_PROPERTY_ACCESS: Byte = 0x21
+      private const val CODE_REFERENCE_SUBSCRIPT_ACCESS: Byte = 0x22
+
       private const val CODE_PROPERTY: Byte = 0x10
       private const val CODE_ENTRY: Byte = 0x11
       private const val CODE_ELEMENT: Byte = 0x12
@@ -259,6 +263,29 @@ internal class BinaryEvaluator(
     override fun visitFunction(value: VmFunction) {
       packer.packArrayHeader(1)
       packer.packInt(CODE_FUNCTION.toInt())
+    }
+
+    override fun visitReference(value: VmReference) {
+      packer.packArrayHeader(4)
+      packer.packInt(CODE_REFERENCE.toInt())
+      packer.packNil() // reserved for type info
+      visit(value.rootValue)
+      packer.packArrayHeader(value.path.size)
+      for (elem in value.path) {
+        visit(elem)
+      }
+    }
+
+    override fun visitReferencePropertyAccess(value: VmReference.PropertyAccess) {
+      packer.packArrayHeader(2)
+      packer.packInt(CODE_REFERENCE_PROPERTY_ACCESS.toInt())
+      packer.packString(value.property)
+    }
+
+    override fun visitReferenceSubscriptAccess(value: VmReference.SubscriptAccess) {
+      packer.packArrayHeader(2)
+      packer.packInt(CODE_REFERENCE_SUBSCRIPT_ACCESS.toInt())
+      visit(value.key)
     }
   }
 }

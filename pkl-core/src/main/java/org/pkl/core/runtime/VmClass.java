@@ -440,6 +440,11 @@ public final class VmClass extends VmValue {
     return isClass(BaseModule.getVarArgsClass(), "pkl.base#VarArgs");
   }
 
+  @Idempotent
+  public boolean isReferenceClass() {
+    return isClass(BaseModule.getReferenceClass(), "pkl.base#Reference");
+  }
+
   private boolean isClass(@Nullable VmClass clazz, String qualifiedClassName) {
     // may be null during evaluation of base module
     return clazz != null ? this == clazz : getQualifiedName().equals(qualifiedClassName);
