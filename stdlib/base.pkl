@@ -3636,3 +3636,35 @@ external class Bytes extends Any {
   /// Converts these bytes into a [List].
   external function toList(): List<UInt8>
 }
+
+/// Creates a reference to the given value.
+@Since { version = "0.30.0" }
+external const function Reference<T>(rootValue: T): Reference<T>
+
+/// A reference to a value that may not exist at evaluation time.
+/// 
+/// Reference provides a type-checked way to 
+@Since { version = "0.30.0" }
+external class Reference<out T> extends Object {
+  // these are methods instead of properties to avoid collisions with referenced properties
+  
+  /// The value from which the Reference is rooted. 
+  external function getRootValue(): Any
+  
+  /// The path of access from [rootValue] to the referent.
+  external function getPath(): List<ReferencePropertyAccess|ReferenceSubscriptAccess>
+}
+
+/// Represents a property access as part of a [Reference].
+@Since { version = "0.30.0" }
+external class ReferencePropertyAccess {
+  /// The property that was accessed.
+  external property: String
+}
+
+/// Represents a subscript access as part of a [Reference].
+@Since { version = "0.30.0" }
+external class ReferenceSubscriptAccess {
+  /// The subscript key that was accessed.
+  external key: Any
+}
