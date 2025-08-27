@@ -58,6 +58,7 @@ import org.pkl.core.runtime.VmMap;
 import org.pkl.core.runtime.VmMapping;
 import org.pkl.core.runtime.VmNull;
 import org.pkl.core.runtime.VmPair;
+import org.pkl.core.runtime.VmReference;
 import org.pkl.core.runtime.VmRegex;
 import org.pkl.core.runtime.VmSet;
 import org.pkl.core.runtime.VmTyped;
@@ -551,6 +552,24 @@ public final class RendererNodes {
 
     @Override
     public void visitNull(VmNull value) {
+      writePropertyName();
+      builder.append(value);
+    }
+
+    @Override
+    public void visitReference(VmReference value) {
+      writePropertyName();
+      builder.append(value);
+    }
+
+    @Override
+    public void visitReferencePropertyAccess(VmReference.PropertyAccess value) {
+      writePropertyName();
+      builder.append(value);
+    }
+
+    @Override
+    public void visitReferenceSubscriptAccess(VmReference.SubscriptAccess value) {
       writePropertyName();
       builder.append(value);
     }

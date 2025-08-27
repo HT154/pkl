@@ -203,6 +203,18 @@ public final class BaseModule extends StdLibModule {
     return ResourceClass.instance;
   }
 
+  public static VmClass getReferenceClass() {
+    return ReferenceClass.instance;
+  }
+
+  public static VmClass getReferencePropertyAccessClass() {
+    return ReferencePropertyAccessClass.instance;
+  }
+
+  public static VmClass getReferenceSubscriptAccessClass() {
+    return ReferenceSubscriptAccessClass.instance;
+  }
+
   public static VmTypeAlias getNonNullTypeAlias() {
     return NonNullTypeAlias.instance;
   }
@@ -349,6 +361,18 @@ public final class BaseModule extends StdLibModule {
 
   private static final class ResourceClass {
     static final VmClass instance = loadClass("Resource");
+  }
+
+  private static final class ReferenceClass {
+    static final VmClass instance = loadClass("Reference");
+  }
+
+  private static final class ReferencePropertyAccessClass {
+    static final VmClass instance = loadClass("ReferencePropertyAccess");
+  }
+
+  private static final class ReferenceSubscriptAccessClass {
+    static final VmClass instance = loadClass("ReferenceSubscriptAccess");
   }
 
   private static final class FunctionClass {

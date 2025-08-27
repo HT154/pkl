@@ -1948,6 +1948,70 @@ public abstract class TypeNode extends PklNode {
     }
   }
 
+  public static final class ReferenceTypeNode extends ObjectSlotTypeNode {
+    @Child private TypeNode valueTypeNode;
+
+    public ReferenceTypeNode(SourceSection sourceSection, TypeNode valueTypeNode) {
+      super(sourceSection);
+      this.valueTypeNode = valueTypeNode;
+    }
+
+    @Override
+    protected Object executeLazily(VirtualFrame frame, Object value) {
+      return doExecute(value);
+    }
+
+    @Override
+    public Object executeEagerly(VirtualFrame frame, Object value) {
+      return doExecute(value);
+    }
+    
+    private Object doExecute(Object value) {
+      if (value instanceof VmReference vmReference) {
+        if (vmReference.checkType(TypeNode.export(valueTypeNode))) {
+          return value;
+        }
+        // TODO
+        throw referenceTypeMismatch(, vmReference.getCandidateTypes())
+      }
+
+      throw typeMismatch(value, BaseModule.getReferenceClass());
+    }
+
+    @Override
+    protected boolean acceptTypeNode(TypeNodeConsumer consumer) {
+      return consumer.accept(this);
+    }
+
+    @Override
+    public VmClass getVmClass() {
+      return BaseModule.getReferenceClass();
+    }
+
+    @Override
+    public VmList getTypeArgumentMirrors() {
+      return VmList.of(valueTypeNode.getMirror());
+    }
+
+    @Override
+    protected boolean doIsEquivalentTo(TypeNode other) {
+      if (!(other instanceof ReferenceTypeNode referenceTypeNode)) {
+        return false;
+      }
+      return valueTypeNode.isEquivalentTo(referenceTypeNode.valueTypeNode);
+    }
+
+    @Override
+    protected PType doExport() {
+      return new PType.Class(BaseModule.getReferenceClass().export(), valueTypeNode.doExport());
+    }
+
+    @Override
+    protected boolean isParametric() {
+      return true;
+    }
+  }
+
   public static final class PairTypeNode extends ObjectSlotTypeNode {
     @Child private TypeNode firstTypeNode;
     @Child private TypeNode secondTypeNode;
