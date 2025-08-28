@@ -1,0 +1,136 @@
+// @ModuleInfo { minPklVersion = "0.30.0" }
+abstract module pkl.Cli
+
+import "pkl:math"
+import "pkl:json"
+import "pkl:reflect"
+import "Cli.pkl"
+
+fixed hidden cmd: Cli = module
+
+fixed hidden rawArgs: List<String> = new json.Parser {}.parse(read("prop:pkl/cmdArgs")).toList()
+
+local parsed: ArgParse = parseArgs(new ArgParse { cmd = module }, rawArgs)
+
+local function parseArgs(parsed: ArgParse, args: List<String>): ArgParse =
+  throw("")
+
+local class ArgParse {
+  cmd: Cli
+  args: Listing<String>
+  flagData: Mapping<String, String>
+}
+
+local flagsClass = (reflect.Module(module).moduleClass.allProperties["flags"].type as reflect.DeclaredType).referent as reflect.Class
+
+local flagSpecs: List<FlagSpec> = flagsClass.allProperties.entries.map((entry) ->
+  let (maybeAnnotation = entry.value.allAnnotations.findOrNull((it) -> it is Flag) as Flag?)
+    new FlagSpec {
+      flag = maybeAnnotation ?? new Flag { name = entry.key }
+      description = entry.value.docComment?.replaceAll("<cmd>", module.name) ?? ""
+      propertyName = entry.key
+      propertyType = entry.value.type
+    })
+
+class FlagSpec {
+  flag: Flag
+  description: String
+  propertyName: String
+  propertyType: reflect.Type
+  
+  valueHint: String = flag.valueHint ?? "todo"
+//   parse: (String) -> Pair<String, Any> // TODO
+
+  fixed hidden shorthandDesc: String = if (flag.shorthand == null) "    " else "-\(flag.shorthand), "
+  fixed hidden nameDesc: String = "--\(flag.name) \(valueHint)"
+}
+
+fixed hidden args: List<String> = parsed.args.toList()
+
+fixed hidden flags: Flags = Map("x", 1, "y", "A").toTyped(flagsClass.reflectee)
+
+fixed hidden usage: String = new Listing {
+  new Listing {
+    "Usage:"
+    name
+  }.join(" ")
+  ""
+  when (longDescription != null) {
+    "  \(longDescription)\n"
+  }
+  when (!subCommands.isEmpty) {
+    "Available Commands:"
+    local childNameWidth = subCommands.fold(0, (acc, elem) -> math.max(acc, elem.name.length)) as Int
+    for (child in subCommands) {
+      "  \(child.name.padEnd(childNameWidth, " ")) \(child.shortDescription)"
+    }
+    ""
+  }
+  when (!flagSpecs.isEmpty) {
+    "Flags:"
+    local nameDescWidth = flagSpecs.fold(0, (acc, spec) -> math.max(acc, spec.nameDesc.length)) as Int
+    for (spec in flagSpecs) {
+      "  \(spec.shorthandDesc)\(spec.nameDesc.padEnd(nameDescWidth, " "))   \(spec.description)"
+    }
+    ""
+  }
+  when (!subCommands.isEmpty) {
+    """
+    Use "\(name) [command] --help" for more information about a command.
+    
+    """
+  }
+}.join("\n")
+
+hidden name: String
+
+hidden aliases: Listing<String>(isDistinct)
+
+hidden shortDescription: String?
+
+hidden longDescription: String?
+
+hidden subCommands: Listing<Cli>(
+    fold(new Listing {}, (acc, elem) -> (acc) { elem.name; ...elem.aliases }).isDistinct // command names and aliases are unique
+  )
+
+abstract class Flags {
+  /// help for <cmd>
+  @Flag { name = "help"; shorthand = "h" }
+  showHelp: Boolean = false
+}
+
+class Flag extends Annotation {
+  name: String?
+  shorthand: Char?
+  valueHint: String?
+}
+
+// class CliOutput extends FileOutput {
+//   multiFileOutput: Boolean
+// 
+//   files: Mapping<String, FileOutput>?
+// }
+// 
+// hidden output: CliOutput = new {
+//   value = outer
+// }
+
+hidden result: CliOutput? = Null(new CliOutput {
+  value = module
+})
+
+class CliOutput extends FileOutput {
+  mode: * "stdout"|"files"
+  files: Mapping<String, FileOutput>?
+}
+
+output {
+  when (flags.showHelp || result == null) {
+    text = cmd.usage
+  } else {
+    bytes = cmd.result.bytes
+    text = cmd.result.text
+    files = cmd.result.files
+  }
+}

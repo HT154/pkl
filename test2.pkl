@@ -1,0 +1,98 @@
+extends "stdlib/Cli.pkl"
+
+import "test.pkl" as parent
+
+fixed flags: Test2Flags = super.flags
+
+name = "test2"
+
+class Test2Flags extends Flags {
+  parent: parent.TestFlags
+  
+  /// a boolean value
+  @Flag { name = "aaa"; shorthand = "a" }
+  bool: Boolean
+
+  /// a listing of boolean value
+  @Flag { name = "bbb"; valueHint = "bee" }
+  boolListing: Listing<Boolean>
+
+  /// a byte buffer
+  @Flag { name = "ccc" }
+  bytes: Bytes
+
+  /// a duration
+  duration: Duration
+
+  durationListing: Listing<Duration>
+
+  float: Float
+
+  floatListing: Listing<Float>
+
+  int: Int
+
+  intListing: Listing<Int>
+
+  int32: Int32
+
+  int32Listing: Listing<Int32>
+
+  int16: Int16
+
+  int16Listing: Listing<Int16>
+
+  int8: Int8
+
+  int8Listing: Listing<Int8>
+
+  uint: UInt
+
+  uintListing: Listing<UInt>
+
+  uint32: UInt32
+
+  uint32Listing: Listing<UInt32>
+
+  uint16: UInt16
+
+  uint16Listing: Listing<UInt16>
+
+  uint8: UInt8
+
+  uint8Listing: Listing<UInt8>
+
+  number: Number
+
+  numberListing: Listing<Number>
+
+  string: String
+
+  stringListing: Listing<String>
+
+  stringStringMapping: Mapping<String, String>
+
+  stringIntMapping: Mapping<String, Int>
+
+  intStringMapping: Mapping<Int, String>
+
+  intIntMapping: Mapping<Int, Int>
+
+  stringEnum: "abc"|"mno"|"xyz"
+
+  stringEnumListing: Listing<"abc"|"mno"|"xyz">
+  
+  unionEnum: "abc"|"xyz"|Int
+  
+  unionComplex: String|UInt
+
+  unionAlias: MyUnion
+
+  unionAliasListing: Listing<MyUnion>
+}
+
+typealias MyUnion = String|UInt
+
+test = flags
+
+result {}

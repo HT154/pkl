@@ -1,0 +1,23 @@
+extends "stdlib/Cli.pkl"
+
+fixed flags: TestFlags = super.flags
+
+name = "test"
+
+subCommands {
+  import("test2.pkl")
+}
+
+class TestFlags extends Flags {
+  /// value x
+  @Flag { name = "xxx"; shorthand = "x" }
+  x: Int
+  
+  /// value y
+  @Flag { name = "yyy"; valueHint = "why" }
+  y: String
+}
+
+test = flags
+
+// result {}
