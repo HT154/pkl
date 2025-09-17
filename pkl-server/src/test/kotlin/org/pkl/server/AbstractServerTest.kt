@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.msgpack.core.MessagePack
+import org.pkl.commons.test.MessagePackDebugRenderer
 import org.pkl.commons.test.PackageServer
 import org.pkl.core.messaging.Messages.*
 import org.pkl.core.module.PathElement
@@ -313,8 +314,8 @@ abstract class AbstractServerTest {
         """
       - 6
       - 
-        - bird:/foo.txt
-        - bird:/subdir/bar.txt
+        - 'bird:/foo.txt'
+        - 'bird:/subdir/bar.txt'
     """
           .trimIndent()
       )
@@ -547,11 +548,11 @@ abstract class AbstractServerTest {
         """
       - 6
       - 
-        - bird:/Person.pkl
-        - bird:/birds/parrot.pkl
-        - bird:/birds/pigeon.pkl
-        - bird:/majesticBirds/barnOwl.pkl
-        - bird:/majesticBirds/elfOwl.pkl
+        - 'bird:/Person.pkl'
+        - 'bird:/birds/parrot.pkl'
+        - 'bird:/birds/pigeon.pkl'
+        - 'bird:/majesticBirds/barnOwl.pkl'
+        - 'bird:/majesticBirds/elfOwl.pkl'
     """
           .trimIndent()
       )
@@ -646,8 +647,7 @@ abstract class AbstractServerTest {
     assertThat(response.result?.debugYaml)
       .isEqualTo(
         """
-      |
-        res1 {
+        'res1 {
           uri = "modulepath:/dir1/resource1.txt"
           text = $tripleQuote
             content
@@ -666,7 +666,8 @@ abstract class AbstractServerTest {
         res3 {
           ressy = "the module2 output"
         }
-    """
+        '
+        """
           .trimIndent()
       )
   }
@@ -756,11 +757,11 @@ abstract class AbstractServerTest {
     assertThat(evaluateResponse.result?.debugYaml)
       .isEqualTo(
         """
-        |
-          firstName = "Pigeon"
-          lastName = "Bird"
-          fullName = "Pigeon Bird"
-      """
+        'firstName = "Pigeon"
+        lastName = "Bird"
+        fullName = "Pigeon Bird"
+        '
+        """
           .trimIndent()
       )
   }
@@ -796,11 +797,11 @@ abstract class AbstractServerTest {
     assertThat(response12.result?.debugYaml)
       .isEqualTo(
         """
-        |
-          firstName = "Pigeon"
-          lastName = "Bird"
-          fullName = "Pigeon Bird"
-      """
+        'firstName = "Pigeon"
+        lastName = "Bird"
+        fullName = "Pigeon Bird"
+        '
+        """
           .trimIndent()
       )
 
@@ -826,11 +827,11 @@ abstract class AbstractServerTest {
     assertThat(response22.result?.debugYaml)
       .isEqualTo(
         """
-        |
-          firstName = "Parrot"
-          lastName = "Bird"
-          fullName = "Parrot Bird"
-      """
+        'firstName = "Parrot"
+        lastName = "Bird"
+        fullName = "Parrot Bird"
+        '
+        """
           .trimIndent()
       )
   }
@@ -937,8 +938,7 @@ abstract class AbstractServerTest {
     assertThat(resp2.result?.debugRendering?.trim())
       .isEqualTo(
         """
-        |
-          res {
+          'res {
             name = "Birdie"
             favoriteFruit {
               name = "dragonfruit"
@@ -947,7 +947,8 @@ abstract class AbstractServerTest {
           libContents {
             text = "This is from lib"
           }
-        """
+          '
+          """
           .trimIndent()
       )
   }

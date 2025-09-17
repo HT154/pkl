@@ -18,6 +18,7 @@ package org.pkl.config.kotlin
 import org.pkl.config.java.Config
 import org.pkl.config.java.ConfigEvaluator
 import org.pkl.config.java.ConfigEvaluatorBuilder
+import org.pkl.config.java.ConfigPklBinaryDecoder
 import org.pkl.config.java.JavaType
 import org.pkl.config.java.mapper.ConversionException
 import org.pkl.config.java.mapper.ValueMapperBuilder
@@ -63,4 +64,7 @@ fun ConfigEvaluatorBuilder.forKotlin(): ConfigEvaluatorBuilder =
   setValueMapperBuilder(valueMapperBuilder.forKotlin())
 
 fun ConfigEvaluator.forKotlin(): ConfigEvaluator =
+  setValueMapper(valueMapper.toBuilder().forKotlin().build())
+
+fun ConfigPklBinaryDecoder.forKotlin(): ConfigPklBinaryDecoder =
   setValueMapper(valueMapper.toBuilder().forKotlin().build())
