@@ -16,15 +16,45 @@
 package org.pkl.core.stdlib.base;
 
 import com.oracle.truffle.api.dsl.Specialization;
+import org.pkl.core.runtime.VmNull;
 import org.pkl.core.runtime.VmReference;
 import org.pkl.core.stdlib.ExternalPropertyNode;
 
-public class ReferenceSubscriptAccessNodes {
-  private ReferenceSubscriptAccessNodes() {}
+public class ReferenceAccessNodes {
+  private ReferenceAccessNodes() {}
+
+  public abstract static class isProperty extends ExternalPropertyNode {
+
+    @Specialization
+    protected boolean eval(VmReference.Access self) {
+      return self.isProperty();
+    }
+  }
+
+  public abstract static class property extends ExternalPropertyNode {
+    @Specialization
+    protected Object eval(VmReference.Access self) {
+      if (!self.isProperty()) {
+        return VmNull.withoutDefault();
+      }
+      return self.getProperty();
+    }
+  }
+
+  public abstract static class isSubscript extends ExternalPropertyNode {
+
+    @Specialization
+    protected boolean eval(VmReference.Access self) {
+      return self.isSubscript();
+    }
+  }
 
   public abstract static class key extends ExternalPropertyNode {
     @Specialization
-    protected Object eval(VmReference.SubscriptAccess self) {
+    protected Object eval(VmReference.Access self) {
+      if (!self.isSubscript()) {
+        return VmNull.withoutDefault();
+      }
       return self.getKey();
     }
   }

@@ -17,8 +17,6 @@ package org.pkl.core.stdlib;
 
 import java.util.*;
 import org.pkl.core.runtime.*;
-import org.pkl.core.runtime.VmReference.PropertyAccess;
-import org.pkl.core.runtime.VmReference.SubscriptAccess;
 import org.pkl.core.util.Nullable;
 import org.pkl.core.util.Pair;
 
@@ -46,8 +44,7 @@ public final class PklConverter implements VmValueConverter<Object> {
   private final @Nullable VmFunction classConverter;
   private final @Nullable VmFunction typeAliasConverter;
   private final @Nullable VmFunction referenceConverter;
-  private final @Nullable VmFunction referencePropertyAccessConverter;
-  private final @Nullable VmFunction referenceSubscriptAccessConverter;
+  private final @Nullable VmFunction referenceAccessConverter;
 
   public PklConverter(VmMapping converters) {
     // As of 0.18, `converters` is forced by the mapping type check,
@@ -76,10 +73,7 @@ public final class PklConverter implements VmValueConverter<Object> {
     classConverter = typeConverters.get(BaseModule.getClassClass());
     typeAliasConverter = typeConverters.get(BaseModule.getTypeAliasClass());
     referenceConverter = typeConverters.get(BaseModule.getReferenceClass());
-    referencePropertyAccessConverter =
-        typeConverters.get(BaseModule.getReferencePropertyAccessClass());
-    referenceSubscriptAccessConverter =
-        typeConverters.get(BaseModule.getReferenceSubscriptAccessClass());
+    referenceAccessConverter = typeConverters.get(BaseModule.getReferenceAccessClass());
   }
 
   @Override
@@ -193,13 +187,8 @@ public final class PklConverter implements VmValueConverter<Object> {
   }
 
   @Override
-  public Object convertReferencePropertyAccess(PropertyAccess value, Iterable<Object> path) {
-    return doConvert(value, path, referencePropertyAccessConverter);
-  }
-
-  @Override
-  public Object convertReferenceSubscriptAccess(SubscriptAccess value, Iterable<Object> path) {
-    return doConvert(value, path, referenceSubscriptAccessConverter);
+  public Object convertReferenceAccess(VmReference.Access value, Iterable<Object> path) {
+    return doConvert(value, path, referenceAccessConverter);
   }
 
   private Map<VmClass, VmFunction> createTypeConverters(VmMapping converters) {

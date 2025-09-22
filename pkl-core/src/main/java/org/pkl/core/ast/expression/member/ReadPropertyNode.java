@@ -70,8 +70,8 @@ public abstract class ReadPropertyNode extends ExpressionNode {
     CompilerDirectives.transferToInterpreter();
     // TODO
     throw exceptionBuilder()
-      .adhocEvalError("Cannot find property `{0}` on Reference", propertyName)
-      .build();
+        .adhocEvalError("Cannot find property `{0}` on Reference", propertyName)
+        .build();
   }
 
   // This method effectively covers `VmObject receiver` but is implemented in a more

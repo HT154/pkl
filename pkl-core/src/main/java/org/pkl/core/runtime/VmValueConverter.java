@@ -84,9 +84,7 @@ public interface VmValueConverter<T> {
 
   T convertReference(VmReference value, Iterable<Object> path);
 
-  T convertReferencePropertyAccess(VmReference.PropertyAccess value, Iterable<Object> path);
-
-  T convertReferenceSubscriptAccess(VmReference.SubscriptAccess value, Iterable<Object> path);
+  T convertReferenceAccess(VmReference.Access value, Iterable<Object> path);
 
   default T convert(Object value, Iterable<Object> path) {
     if (value instanceof VmValue vmValue) {

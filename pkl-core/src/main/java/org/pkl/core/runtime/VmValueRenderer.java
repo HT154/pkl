@@ -17,10 +17,7 @@ package org.pkl.core.runtime;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import org.pkl.core.PklBugException;
 import org.pkl.core.ValueFormatter;
-import org.pkl.core.runtime.VmReference.PropertyAccess;
-import org.pkl.core.runtime.VmReference.SubscriptAccess;
 import org.pkl.core.util.MutableBoolean;
 import org.pkl.parser.Lexer;
 
@@ -271,33 +268,26 @@ public final class VmValueRenderer {
 
     @Override
     public void visitReference(VmReference value) {
-      append("Reference(<root>)");
+      contexts.push(Context.EXPLICIT);
+      append("Reference(");
+      visit(value.getRootValue());
+      append(")");
       for (var elem : value.getPath()) {
         visit(elem);
-        if (elem instanceof VmReference.PropertyAccess prop) {
-
-        } else if (elem instanceof VmReference.SubscriptAccess sub) {
-
-        } else {
-          // just in case other access types are add
-          throw PklBugException.unreachableCode();
-        }
       }
-    }
-
-    @Override
-    public void visitReferencePropertyAccess(PropertyAccess value) {
-      append(".");
-      writeIdentifier(value.getProperty());
-    }
-
-    @Override
-    public void visitReferenceSubscriptAccess(SubscriptAccess value) {
-      contexts.push(Context.EXPLICIT);
-      append("[");
-      visit(value.getKey());
-      append("]");
       contexts.pop();
+    }
+
+    @Override
+    public void visitReferenceAccess(VmReference.Access value) {
+      if (value.isProperty()) {
+        append(".");
+        writeIdentifier(value.getProperty());
+      } else {
+        append("[");
+        visit(value.getKey());
+        append("]");
+      }
     }
 
     private void append(Object value) {

@@ -1,6 +1,6 @@
 –– Pkl Error ––
 Expected value of type `Reference`, but got type `Reference`.
-Value: Reference(<root>)
+Value: Reference(new A { name = "a"; id = "some-a-value" })
 
 xxxx | external const function Reference<T>(rootValue: T): Reference<T>
                                                            ^^^^^^^^^^^^

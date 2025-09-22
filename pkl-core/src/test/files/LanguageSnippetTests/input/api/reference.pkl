@@ -46,7 +46,7 @@ b: B = new {
 function renderReference(ref: Reference): String =
   if (ref.getRootValue() is Resource)
     (ref.getRootValue() as Resource).name + ref.getPath().toList().map((elem) ->
-        if (elem is ReferencePropertyAccess) ".\(elem.property)"
+        if (elem.isProperty) ".\(elem.property)"
         else "[\(elem.key)]"
       ).join("")
   else throw("can only render references rooted to Resource instances")
