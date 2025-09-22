@@ -27,13 +27,14 @@ import org.organicdesign.fp.collections.RrbTree.ImRrbt;
 import org.pkl.core.Composite;
 import org.pkl.core.Modifier;
 import org.pkl.core.PClassInfo;
+import org.pkl.core.PNull;
 import org.pkl.core.PObject;
 import org.pkl.core.PType;
-import org.pkl.core.PklBugException;
 import org.pkl.core.util.Nullable;
 
 public final class VmReference extends VmValue {
 
+  // candidate types can only be: PType.Class, PType.StringLiteral, or PType.UNKNOWN
   private final Set<PType> candidateTypes;
   private final VmValue rootValue;
   private final ImRrbt<Access> path;
@@ -61,14 +62,36 @@ public final class VmReference extends VmValue {
     return path;
   }
 
+  public @Nullable VmReference withPropertyAccess(Identifier property) {
+    var candidates =
+      candidateTypes.stream()
+        .flatMap((it) -> getCandidatePropertyType(it, property.toString()))
+        .collect(Collectors.toUnmodifiableSet());
+    if (candidates.isEmpty()) {
+      return null;
+    }
+    return new VmReference(
+      candidates, rootValue, path.append(Access.property(property.toString())));
+  }
+
+  public @Nullable VmReference withSubscriptAccess(Object key) {
+    var candidates =
+      candidateTypes.stream()
+        .flatMap((it) -> getCandidateSubscriptType(it, key))
+        .collect(Collectors.toUnmodifiableSet());
+    if (candidates.isEmpty()) {
+      return null;
+    }
+
+    return new VmReference(candidates, rootValue, path.append(Access.subscript(key)));
+  }
+
   private static Stream<PType> getCandidateTypes(List<PType> types) {
     return types.stream().flatMap(VmReference::getCandidateTypes);
   }
 
   private static Stream<PType> getCandidateTypes(PType type) {
-    if (type.equals(PType.UNKNOWN)
-        || type.equals(PType.NOTHING)
-        || type.equals(PType.MODULE)
+    if (type == PType.UNKNOWN
         || type instanceof PType.StringLiteral
         || type instanceof PType.Class) {
       return Stream.of(type);
@@ -78,93 +101,74 @@ public final class VmReference extends VmValue {
       return getCandidateTypes(constrained.getBaseType());
     } else if (type instanceof PType.Alias alias) {
       return getCandidateTypes(alias.getAliasedType());
-    } else if (type instanceof PType.Function || type instanceof PType.TypeVariable) {
-      return Stream.empty();
     } else if (type instanceof PType.Union union) {
-      return union.getElementTypes().stream().flatMap(VmReference::getCandidateTypes);
+      return getCandidateTypes(union.getElementTypes());
     }
-    throw PklBugException.unreachableCode();
+    // PType.MODULE, PType.NOTHING, PType.Function, PType.TypeVariable
+    return Stream.empty();
   }
 
+  @SuppressWarnings("DuplicatedCode")
   private static Stream<PType> getCandidatePropertyType(PType type, String property) {
-    if (type.equals(PType.UNKNOWN)) {
+    if (type == PType.UNKNOWN) {
       return Stream.of(type);
-    } else if (type instanceof PType.Class klass) {
-      if (klass.getPClass().getInfo() == PClassInfo.Dynamic) {
-        return Stream.of(PType.UNKNOWN);
-      } else if (klass.getPClass().getInfo() == PClassInfo.Listing
-          || klass.getPClass().getInfo() == PClassInfo.Mapping) {
-        return Stream.empty();
-      } else { // Typed
-        var prop = klass.getPClass().getAllProperties().get(property);
-        return prop == null || prop.getModifiers().contains(Modifier.EXTERNAL)
-            ? Stream.empty()
-            : getCandidateTypes(prop.getType());
-      }
-    } else {
+    }
+    if (!(type instanceof PType.Class klass)) {
       return Stream.empty();
     }
+    if (klass.getPClass().getInfo() == PClassInfo.Dynamic) {
+      return Stream.of(PType.UNKNOWN);
+    }
+    if (klass.getPClass().getInfo() == PClassInfo.Listing
+        || klass.getPClass().getInfo() == PClassInfo.Mapping) {
+      return Stream.empty();
+    }
+    // Typed
+    var prop = klass.getPClass().getAllProperties().get(property);
+    return prop == null || prop.getModifiers().contains(Modifier.EXTERNAL)
+        ? Stream.empty()
+        : getCandidateTypes(prop.getType());
   }
 
+  @SuppressWarnings("DuplicatedCode")
   private static Stream<PType> getCandidateSubscriptType(PType type, Object key) {
-    if (type.equals(PType.UNKNOWN)) {
+    if (type == PType.UNKNOWN) {
       return Stream.of(type);
-    } else if (type instanceof PType.Class klass) {
-      if (klass.getPClass().getInfo() == PClassInfo.Dynamic) {
-        return Stream.of(PType.UNKNOWN);
-      } else if (klass.getPClass().getInfo() == PClassInfo.Listing) {
-        if (key instanceof Long) {
-          var typeArgs = klass.getTypeArguments();
-          return typeArgs.isEmpty() ? Stream.of(PType.UNKNOWN) : getCandidateTypes(typeArgs.get(0));
-        } else {
-          return Stream.empty();
-        }
-      } else if (klass.getPClass().getInfo() == PClassInfo.Mapping) {
-        var typeArgs = klass.getTypeArguments();
-        if (typeArgs.isEmpty()) {
-          return Stream.of(PType.UNKNOWN);
-        } else { // mapping always has 2 type args if it has any
-          return getCandidateTypes(typeArgs.get(0))
-                  .anyMatch(
-                      (it) ->
-                          it.equals(PType.UNKNOWN)
-                              || (it instanceof PType.Class klazz
-                                  && klazz.getPClass().getInfo() == PClassInfo.forValue(key))
-                              || (it instanceof PType.StringLiteral stringLiteral
-                                  && stringLiteral.getLiteral().equals(key)))
-              ? getCandidateTypes(typeArgs.get(1))
-              : Stream.empty();
-        }
-      } else { // Typed
-        return Stream.empty();
-      }
-    } else {
+    }
+    if (!(type instanceof PType.Class klass)) {
       return Stream.empty();
     }
-  }
-
-  public @Nullable VmReference withPropertyAccess(Identifier property) {
-    var candidates =
-        candidateTypes.stream()
-            .flatMap((it) -> getCandidatePropertyType(it, property.toString()))
-            .collect(Collectors.toUnmodifiableSet());
-    if (candidates.isEmpty()) {
-      return null;
+    if (klass.getPClass().getInfo() == PClassInfo.Dynamic) {
+      return Stream.of(PType.UNKNOWN);
     }
-    return new VmReference(
-        candidates, rootValue, path.append(new PropertyAccess(property.toString())));
-  }
-
-  public @Nullable VmReference withSubscriptAccess(Object key) {
-    var candidates =
-        candidateTypes.stream()
-            .flatMap((it) -> getCandidateSubscriptType(it, key))
-            .collect(Collectors.toUnmodifiableSet());
-    if (candidates.isEmpty()) {
-      return null;
+    if (klass.getPClass().getInfo() == PClassInfo.Listing) {
+      if (key instanceof Long) {
+        var typeArgs = klass.getTypeArguments();
+        return typeArgs.isEmpty() ? Stream.of(PType.UNKNOWN) : getCandidateTypes(typeArgs.get(0));
+      } else {
+        return Stream.empty();
+      }
+    }
+    if (klass.getPClass().getInfo() == PClassInfo.Mapping) {
+      var typeArgs = klass.getTypeArguments();
+      if (typeArgs.isEmpty()) {
+        return Stream.of(PType.UNKNOWN);
+      } else { // mapping always has 2 type args if it has any
+        return getCandidateTypes(typeArgs.get(0))
+                .anyMatch(
+                    (it) ->
+                        it.equals(PType.UNKNOWN)
+                            || (it instanceof PType.Class klazz
+                                && klazz.getPClass().getInfo() == PClassInfo.forValue(key))
+                            || (it instanceof PType.StringLiteral stringLiteral
+                                && stringLiteral.getLiteral().equals(key)))
+            ? getCandidateTypes(typeArgs.get(1))
+            : Stream.empty();
+      }
     }
 
-    return new VmReference(candidates, rootValue, path.append(new SubscriptAccess(key)));
+    // Typed
+    return Stream.empty();
   }
 
   @Override
@@ -218,98 +222,84 @@ public final class VmReference extends VmValue {
         && rootValue.equals(other.getRootValue())
         && path.equals(other.getPath());
   }
-  
+
   public boolean checkType(PType type) {
     return getCandidateTypes(type).anyMatch(candidateTypes::contains);
   }
 
-  public abstract static class Access extends VmValue {}
+  public static class Access extends VmValue {
+    private final @Nullable String property;
+    private final @Nullable Object key;
 
-  public static final class PropertyAccess extends Access {
-    private final String property;
+    public static Access property(String property) {
+      return new Access(property, null);
+    }
 
-    public PropertyAccess(String property) {
+    public static Access subscript(Object key) {
+      return new Access(null, key);
+    }
+
+    private Access(@Nullable String property, @Nullable Object key) {
       this.property = property;
-    }
-
-    public String getProperty() {
-      return property;
-    }
-
-    @Override
-    public VmClass getVmClass() {
-      return BaseModule.getReferencePropertyAccessClass();
-    }
-
-    @Override
-    public void force(boolean allowUndefinedValues) {
-      // do nothing
-    }
-
-    @Override
-    public Object export() {
-      return new PObject(getVmClass().getPClassInfo(), Map.of("property", property));
-    }
-
-    @Override
-    public void accept(VmValueVisitor visitor) {
-      visitor.visitReferencePropertyAccess(this);
-    }
-
-    @Override
-    public <T> T accept(VmValueConverter<T> converter, Iterable<Object> path) {
-      return converter.convertReferencePropertyAccess(this, path);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-      if (this == obj) return true;
-      if (!(obj instanceof PropertyAccess other)) return false;
-      return property.equals(other.getProperty());
-    }
-  }
-
-  public static final class SubscriptAccess extends Access {
-    private final Object key;
-
-    public SubscriptAccess(Object key) {
       this.key = key;
     }
 
+    public String getProperty() {
+      assert property != null;
+      return property;
+    }
+
     public Object getKey() {
+      assert key != null;
       return key;
+    }
+
+    public boolean isProperty() {
+      return property != null;
+    }
+
+    public boolean isSubscript() {
+      return key != null;
     }
 
     @Override
     public VmClass getVmClass() {
-      return BaseModule.getReferenceSubscriptAccessClass();
+      return BaseModule.getReferenceAccessClass();
     }
 
     @Override
     public void force(boolean allowUndefinedValues) {
-      VmValue.force(key, allowUndefinedValues);
+      if (key != null) {
+        VmValue.force(key, allowUndefinedValues);
+      }
     }
 
     @Override
     public Object export() {
-      return new PObject(getVmClass().getPClassInfo(), Map.of("key", VmValue.export(key)));
+      return new PObject(
+          getVmClass().getPClassInfo(),
+          Map.of(
+              "property",
+              property == null ? PNull.getInstance() : property,
+              "key",
+              key == null ? PNull.getInstance() : VmValue.export(key)));
     }
 
     @Override
     public void accept(VmValueVisitor visitor) {
-      visitor.visitReferenceSubscriptAccess(this);
+      visitor.visitReferenceAccess(this);
     }
 
     @Override
     public <T> T accept(VmValueConverter<T> converter, Iterable<Object> path) {
-      return converter.convertReferenceSubscriptAccess(this, path);
+      return converter.convertReferenceAccess(this, path);
     }
 
     @Override
     public boolean equals(Object obj) {
       if (this == obj) return true;
-      if (!(obj instanceof SubscriptAccess other)) return false;
-      return key.equals(other.getKey());
+      if (!(obj instanceof Access other)) return false;
+      return Objects.equals(property, other.getProperty()) && Objects.equals(key, other.getKey());
     }
   }
 }

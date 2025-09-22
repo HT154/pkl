@@ -24,13 +24,6 @@ import org.pkl.core.stdlib.ExternalMethod0Node;
 public class ReferenceNodes {
   private ReferenceNodes() {}
 
-  //  public abstract static class getClass extends ExternalMethod0Node {
-  //    @Specialization
-  //    protected VmClass eval(VmReference self) {
-  //      return self.getClazz();
-  //    }
-  //  }
-
   public abstract static class getRootValue extends ExternalMethod0Node {
     @Specialization
     protected VmValue eval(VmReference self) {

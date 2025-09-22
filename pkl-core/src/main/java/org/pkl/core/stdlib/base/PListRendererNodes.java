@@ -157,21 +157,6 @@ public final class PListRendererNodes {
     }
 
     @Override
-    public void visitReference(VmReference value) {
-      cannotRenderTypeAddConverter(value);
-    }
-
-    @Override
-    public void visitReferencePropertyAccess(VmReference.PropertyAccess value) {
-      cannotRenderTypeAddConverter(value);
-    }
-
-    @Override
-    public void visitReferenceSubscriptAccess(VmReference.SubscriptAccess value) {
-      cannotRenderTypeAddConverter(value);
-    }
-
-    @Override
     protected void visitDocument(Object value) {
       if (!(value instanceof VmCollection
           || value instanceof VmMap

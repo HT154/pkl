@@ -563,13 +563,7 @@ public final class RendererNodes {
     }
 
     @Override
-    public void visitReferencePropertyAccess(VmReference.PropertyAccess value) {
-      writePropertyName();
-      builder.append(value);
-    }
-
-    @Override
-    public void visitReferenceSubscriptAccess(VmReference.SubscriptAccess value) {
+    public void visitReferenceAccess(VmReference.Access value) {
       writePropertyName();
       builder.append(value);
     }

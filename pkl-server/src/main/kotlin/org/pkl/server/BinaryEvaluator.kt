@@ -89,8 +89,7 @@ internal class BinaryEvaluator(
       private const val CODE_FUNCTION: Byte = 0x0E
       private const val CODE_BYTES: Byte = 0x0F
       private const val CODE_REFERENCE: Byte = 0x20
-      private const val CODE_REFERENCE_PROPERTY_ACCESS: Byte = 0x21
-      private const val CODE_REFERENCE_SUBSCRIPT_ACCESS: Byte = 0x22
+      private const val CODE_REFERENCE_ACCESS: Byte = 0x21
 
       private const val CODE_PROPERTY: Byte = 0x10
       private const val CODE_ENTRY: Byte = 0x11
@@ -276,16 +275,16 @@ internal class BinaryEvaluator(
       }
     }
 
-    override fun visitReferencePropertyAccess(value: VmReference.PropertyAccess) {
-      packer.packArrayHeader(2)
-      packer.packInt(CODE_REFERENCE_PROPERTY_ACCESS.toInt())
-      packer.packString(value.property)
-    }
-
-    override fun visitReferenceSubscriptAccess(value: VmReference.SubscriptAccess) {
-      packer.packArrayHeader(2)
-      packer.packInt(CODE_REFERENCE_SUBSCRIPT_ACCESS.toInt())
-      visit(value.key)
+    override fun visitReferenceAccess(value: VmReference.Access) {
+      packer.packArrayHeader(3)
+      packer.packInt(CODE_REFERENCE_ACCESS.toInt())
+      if (value.isProperty) {
+        packer.packString(value.property)
+        packer.packNil()
+      } else {
+        packer.packNil()
+        visit(value.key)
+      }
     }
   }
 }
