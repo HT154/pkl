@@ -30,7 +30,6 @@ import org.pkl.core.runtime.VmMapping;
 import org.pkl.core.runtime.VmNull;
 import org.pkl.core.runtime.VmObjectLike;
 import org.pkl.core.runtime.VmPair;
-import org.pkl.core.runtime.VmReference;
 import org.pkl.core.runtime.VmRegex;
 import org.pkl.core.runtime.VmSet;
 import org.pkl.core.runtime.VmTyped;
@@ -104,21 +103,6 @@ public final class PcfRenderer extends AbstractStringRenderer {
   @Override
   public void visitBytes(VmBytes value) {
     builder.append(value);
-  }
-
-  @Override
-  public void visitReference(VmReference value) {
-    cannotRenderTypeAddConverter(value);
-  }
-
-  @Override
-  public void visitReferencePropertyAccess(VmReference.PropertyAccess value) {
-    cannotRenderTypeAddConverter(value);
-  }
-
-  @Override
-  public void visitReferenceSubscriptAccess(VmReference.SubscriptAccess value) {
-    cannotRenderTypeAddConverter(value);
   }
 
   @Override

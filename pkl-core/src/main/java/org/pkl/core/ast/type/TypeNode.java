@@ -1965,14 +1965,14 @@ public abstract class TypeNode extends PklNode {
     public Object executeEagerly(VirtualFrame frame, Object value) {
       return doExecute(value);
     }
-    
+
     private Object doExecute(Object value) {
       if (value instanceof VmReference vmReference) {
         if (vmReference.checkType(TypeNode.export(valueTypeNode))) {
           return value;
         }
         // TODO
-        throw referenceTypeMismatch(, vmReference.getCandidateTypes())
+        //        throw referenceTypeMismatch(, vmReference.getCandidateTypes())
       }
 
       throw typeMismatch(value, BaseModule.getReferenceClass());

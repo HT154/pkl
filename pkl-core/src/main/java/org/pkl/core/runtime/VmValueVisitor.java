@@ -62,9 +62,7 @@ public interface VmValueVisitor {
 
   void visitReference(VmReference value);
 
-  void visitReferencePropertyAccess(VmReference.PropertyAccess value);
-
-  void visitReferenceSubscriptAccess(VmReference.SubscriptAccess value);
+  void visitReferenceAccess(VmReference.Access value);
 
   default void visit(Object value) {
     Objects.requireNonNull(value, "Value to be visited must be non-null.");
