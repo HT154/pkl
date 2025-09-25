@@ -19,6 +19,7 @@ import static org.pkl.core.PClassInfo.pklBaseUri;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
+import java.util.Set;
 
 public final class BaseModule extends StdLibModule {
   static final VmTyped instance = VmUtils.createEmptyModule();
@@ -235,6 +236,29 @@ public final class BaseModule extends StdLibModule {
     return UInt8TypeAlias.instance;
   }
 
+  public static VmTypeAlias getUInt16TypeAlias() {
+    return UInt16TypeAlias.instance;
+  }
+
+  public static VmTypeAlias getUInt32TypeAlias() {
+    return UInt32TypeAlias.instance;
+  }
+
+  public static VmTypeAlias getUIntTypeAlias() {
+    return UIntTypeAlias.instance;
+  }
+
+  public static Set<VmTypeAlias> getIntTypeAliases() {
+    return Set.of(
+        getInt8TypeAlias(),
+        getInt16TypeAlias(),
+        getInt32TypeAlias(),
+        getUInt8TypeAlias(),
+        getUInt16TypeAlias(),
+        getUInt32TypeAlias(),
+        getUIntTypeAlias());
+  }
+
   private static final class AnyClass {
     static final VmClass instance = loadClass("Any");
   }
@@ -413,6 +437,18 @@ public final class BaseModule extends StdLibModule {
 
   private static final class UInt8TypeAlias {
     static final VmTypeAlias instance = loadTypeAlias("UInt8");
+  }
+
+  private static final class UInt16TypeAlias {
+    static final VmTypeAlias instance = loadTypeAlias("UInt16");
+  }
+
+  private static final class UInt32TypeAlias {
+    static final VmTypeAlias instance = loadTypeAlias("UInt32");
+  }
+
+  private static final class UIntTypeAlias {
+    static final VmTypeAlias instance = loadTypeAlias("UInt");
   }
 
   private static final class MixinTypeAlias {

@@ -70,7 +70,7 @@ public abstract class ReadPropertyNode extends ExpressionNode {
     CompilerDirectives.transferToInterpreter();
     // TODO
     throw exceptionBuilder()
-        .adhocEvalError("Cannot find property `{0}` on Reference", propertyName)
+        .adhocEvalError("Cannot find property `{0}` on Reference<FooBarBaz>", propertyName)
         .build();
   }
 
