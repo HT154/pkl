@@ -3643,7 +3643,13 @@ external const function Reference<T>(rootValue: T): Reference<T>
 
 /// A reference to a value that may not exist at evaluation time.
 /// 
-/// Reference provides a type-checked way to 
+/// Reference provides a type-checked way to produce references to data that is not known at time of
+/// evaluation. Different configuration systems may ascribe different meanings to references and
+/// require that textuat rendering is formatted in specific ways.
+/// 
+/// Limitations:
+/// * Most type constraints are ignored (erased) when referenced.
+/// * Properties marked `external` may not be referenced.
 @Since { version = "0.30.0" }
 external class Reference<out T> extends Object {
   // these are methods instead of properties to avoid collisions with referenced properties

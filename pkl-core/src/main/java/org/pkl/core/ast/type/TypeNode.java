@@ -1950,29 +1950,36 @@ public abstract class TypeNode extends PklNode {
 
   public static final class ReferenceTypeNode extends ObjectSlotTypeNode {
     @Child private TypeNode valueTypeNode;
+    @Child private ExpressionNode getModuleNode;
 
     public ReferenceTypeNode(SourceSection sourceSection, TypeNode valueTypeNode) {
       super(sourceSection);
       this.valueTypeNode = valueTypeNode;
+      this.getModuleNode = new GetModuleNode(sourceSection);
     }
 
     @Override
     protected Object executeLazily(VirtualFrame frame, Object value) {
-      return doExecute(value);
+      return doExecute(frame, value);
     }
 
     @Override
     public Object executeEagerly(VirtualFrame frame, Object value) {
-      return doExecute(value);
+      return doExecute(frame, value);
     }
 
-    private Object doExecute(Object value) {
+    private Object doExecute(VirtualFrame frame, Object value) {
       if (value instanceof VmReference vmReference) {
-        if (vmReference.checkType(TypeNode.export(valueTypeNode))) {
+        var module = (VmTyped) getModuleNode.executeGeneric(frame);
+        if (vmReference.checkType(TypeNode.export(valueTypeNode), module.getVmClass().export())) {
           return value;
         }
-        // TODO
-        //        throw referenceTypeMismatch(, vmReference.getCandidateTypes())
+        // TODO better exceptions?
+        throw new VmExceptionBuilder()
+            .adhocEvalError(
+                "reference type mismatch Reference<%s> and %s",
+                vmReference.getCandidateTypes(), TypeNode.export(valueTypeNode))
+            .build();
       }
 
       throw typeMismatch(value, BaseModule.getReferenceClass());

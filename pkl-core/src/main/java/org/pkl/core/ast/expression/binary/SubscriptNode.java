@@ -105,7 +105,9 @@ public abstract class SubscriptNode extends BinaryExpressionNode {
 
     CompilerDirectives.transferToInterpreter();
     // TODO
-    throw exceptionBuilder().adhocEvalError("unabled to index reference with key {0}", key).build();
+    throw exceptionBuilder()
+        .adhocEvalError("unabled to index reference<FooBarBaz> with key {0}", key)
+        .build();
   }
 
   @Specialization
