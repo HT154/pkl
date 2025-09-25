@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ public final class TypeAlias extends Member implements Value {
   private final String moduleName;
   private final String qualifiedName;
   private final List<TypeParameter> typeParameters;
+  private final PClass moduleClass;
 
   @LateInit private PType aliasedType;
 
@@ -39,11 +40,13 @@ public final class TypeAlias extends Member implements Value {
       String simpleName,
       String moduleName,
       String qualifiedName,
-      List<TypeParameter> typeParameters) {
+      List<TypeParameter> typeParameters,
+      PClass moduleClass) {
     super(docComment, sourceLocation, modifiers, annotations, simpleName);
     this.moduleName = moduleName;
     this.qualifiedName = qualifiedName;
     this.typeParameters = typeParameters;
+    this.moduleClass = moduleClass;
   }
 
   public void initAliasedType(PType type) {
@@ -53,7 +56,7 @@ public final class TypeAlias extends Member implements Value {
 
   /**
    * Returns the name of the module that this type alias is declared in. Note that a module name is
-   * not guaranteed to be unique, especially if it not declared but inferred from the module URI.
+   * not guaranteed to be unique, especially if it is not declared but inferred from the module URI.
    */
   public String getModuleName() {
     return moduleName;
@@ -76,6 +79,10 @@ public final class TypeAlias extends Member implements Value {
 
   public List<TypeParameter> getTypeParameters() {
     return typeParameters;
+  }
+
+  public PClass getModuleClass() {
+    return moduleClass;
   }
 
   /** Returns the type that this type alias stands for. */
