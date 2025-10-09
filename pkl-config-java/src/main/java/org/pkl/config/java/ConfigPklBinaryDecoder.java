@@ -16,8 +16,8 @@
 package org.pkl.config.java;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Map;
-import org.msgpack.core.MessageUnpacker;
 import org.pkl.config.java.mapper.ValueMapper;
 import org.pkl.config.java.mapper.ValueMapperBuilder;
 import org.pkl.core.Composite;
@@ -57,17 +57,8 @@ public class ConfigPklBinaryDecoder {
    *
    * @return the encoded config
    */
-  public Config decode(ByteArrayInputStream inputStream) {
+  public Config decode(InputStream inputStream) {
     return makeConfig(PklBinaryDecoder.decode(inputStream));
-  }
-
-  /**
-   * Decode a config from the supplied {@link MessageUnpacker}.
-   *
-   * @return the encoded config
-   */
-  public Config decode(MessageUnpacker unpacker) {
-    return makeConfig(PklBinaryDecoder.decode(unpacker));
   }
 
   private Config makeConfig(Object decoded) {

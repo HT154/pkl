@@ -17,6 +17,7 @@ package org.pkl.core;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 import org.pkl.core.runtime.BaseModule;
 import org.pkl.core.util.CollectionUtils;
+import org.pkl.core.util.pklbinary.AbstractPklBinaryDecoder;
 
 /**
  * A decoder/parser for the <a
@@ -44,7 +46,7 @@ public class PklBinaryDecoder extends AbstractPklBinaryDecoder {
    * @return the encoded value
    */
   public static Object decode(byte[] bytes) {
-    return decode(MessagePack.newDefaultUnpacker(bytes));
+    return new PklBinaryDecoder(MessagePack.newDefaultUnpacker(bytes)).decode();
   }
 
   /**
@@ -52,17 +54,8 @@ public class PklBinaryDecoder extends AbstractPklBinaryDecoder {
    *
    * @return the encoded value
    */
-  public static Object decode(ByteArrayInputStream inputStream) {
-    return decode(MessagePack.newDefaultUnpacker(inputStream));
-  }
-
-  /**
-   * Decode a value from the supplied {@link MessageUnpacker}.
-   *
-   * @return the encoded value
-   */
-  public static Object decode(MessageUnpacker unpacker) {
-    return new PklBinaryDecoder(unpacker).decode();
+  public static Object decode(InputStream inputStream) {
+    return new PklBinaryDecoder(MessagePack.newDefaultUnpacker(inputStream)).decode();
   }
 
   @Override

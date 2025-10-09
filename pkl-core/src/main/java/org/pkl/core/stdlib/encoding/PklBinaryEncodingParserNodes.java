@@ -20,15 +20,20 @@ import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.nodes.IndirectCallNode;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 import org.pkl.core.PClassInfo;
-import org.pkl.core.http.HttpClientInitException;
-import org.pkl.core.packages.PackageLoadError;
+import org.pkl.core.PklBugException;
 import org.pkl.core.runtime.BaseModule;
 import org.pkl.core.runtime.Identifier;
 import org.pkl.core.runtime.VmBytes;
 import org.pkl.core.runtime.VmClass;
 import org.pkl.core.runtime.VmContext;
 import org.pkl.core.runtime.VmLanguage;
+import org.pkl.core.runtime.VmList;
+import org.pkl.core.runtime.VmListingOrMapping;
+import org.pkl.core.runtime.VmMap;
 import org.pkl.core.runtime.VmPklBinaryDecoder;
 import org.pkl.core.runtime.VmTypeAlias;
 import org.pkl.core.runtime.VmTyped;
@@ -41,29 +46,51 @@ public final class PklBinaryEncodingParserNodes {
   public abstract static class parse extends ExternalMethod1Node {
     @Specialization
     protected Object eval(VmTyped self, VmBytes bytes) {
-      return doParse(bytes.getBytes());
+      return doParse(self, bytes.getBytes());
     }
 
     @Specialization
     protected Object eval(
         VmTyped self, VmTyped resource, @Cached("create()") IndirectCallNode callNode) {
       var bytes = (VmBytes) VmUtils.readMember(resource, Identifier.BYTES, callNode);
-      return doParse(bytes.getBytes());
+      return doParse(self, bytes.getBytes());
     }
 
     @TruffleBoundary
-    private Object doParse(byte[] bytes) {
-      return VmPklBinaryDecoder.decode(bytes, new Importer());
+    private Object doParse(VmTyped self, byte[] bytes) {
+      return VmPklBinaryDecoder.decode(bytes, new Importer(getImports(self)));
+    }
+
+    private static Map<URI, VmTyped> getImports(VmTyped self) {
+      var imports = VmUtils.readMember(self, Identifier.IMPORTS);
+      var importMap = new HashMap<URI, VmTyped>();
+      Consumer<VmTyped> putMod =
+          (mod) -> importMap.put(mod.getModuleInfo().getModuleKey().getUri(), mod);
+      if (imports instanceof VmListingOrMapping importsListingOrMapping) {
+        importsListingOrMapping.forceAndIterateMemberValues(
+            ((key, member, mod) -> {
+              putMod.accept((VmTyped) mod);
+              return true;
+            }));
+      } else if (imports instanceof VmList importsList) {
+        importsList.forEach((mod) -> putMod.accept((VmTyped) mod));
+      } else if (imports instanceof VmMap importsMap) {
+        importsMap.forEach((entry) -> putMod.accept((VmTyped) entry.getValue()));
+      } else {
+        throw PklBugException.unreachableCode();
+      }
+      return importMap;
     }
 
     private class Importer implements VmPklBinaryDecoder.Importer {
-
+      private final Map<URI, VmTyped> imports;
       private final VmContext context;
       private final VmLanguage language;
 
-      private Importer() {
-        this.language = VmLanguage.get(parse.this);
+      private Importer(Map<URI, VmTyped> imports) {
+        this.imports = imports;
         this.context = VmContext.get(parse.this);
+        this.language = VmLanguage.get(parse.this);
       }
 
       @Override
@@ -123,15 +150,16 @@ public final class PklBinaryEncodingParserNodes {
       }
 
       private VmTyped importModule(URI importUri) {
-        try {
-          // XXX: Intentionally not calling SecurityManager.checkImportModule.
-          // It is not straightforward to get the calling module's URI.
-          // We intend to re-evaluate the implementation of trust levels in the future.
-          var moduleToImport = context.getModuleResolver().resolve(importUri, parse.this);
-          return language.loadModule(moduleToImport, parse.this);
-        } catch (PackageLoadError | HttpClientInitException e) {
-          throw parse.this.exceptionBuilder().withCause(e).build();
+        if (importUri.getScheme().equals("pkl")) {
+          var moduleKey = context.getModuleResolver().resolve(importUri, parse.this);
+          return language.loadModule(moduleKey, parse.this);
         }
+
+        var module = imports.get(importUri);
+        if (module == null) {
+          throw new Importer.Exception(importUri);
+        }
+        return module;
       }
     }
   }

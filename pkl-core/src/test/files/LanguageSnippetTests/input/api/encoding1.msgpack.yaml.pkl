@@ -36,7 +36,7 @@ class Foo {
 typealias Bar = Mapping<String, String>
 
 classInstance: Foo = new {
-  moduleClass = module.getClass()
+  moduleClass = Map(true, module.getClass())[true]
 }
 
 hidden noFunc: Foo = (classInstance) { func = null }

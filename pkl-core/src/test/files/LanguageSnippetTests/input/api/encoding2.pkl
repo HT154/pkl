@@ -1,26 +1,28 @@
-extends "encoding1.msgpack.yaml.pkl"
+import "encoding1.msgpack.yaml.pkl" as encoding1
 
 import "pkl:encoding"
 
-decoded: Foo = new encoding.PklBinaryEncodingParser {}.parse(encoded) as Foo
+original: encoding1.Foo = encoding1.noFunc
+
+decoded: encoding1.Foo =
+  new encoding.PklBinaryEncodingParser {
+    imports {
+      encoding1
+    }
+  }
+    .parse(encoding1.encoded) as encoding1.Foo
 
 decodedClass = decoded.getClass().toString()
 
-didRoundTrip: Boolean = decoded == noFunc
+didRoundTrip: Boolean = decoded == encoding1.noFunc
 
 output = new {
-  value = (module) {
-    classInstance {
-      func = null
-    }
-    decoded {
-      func = null
-    }
-  }
+  value = outer
   renderer {
     converters {
       [Class] = (it) -> it.toString()
       [TypeAlias] = (it) -> it.toString()
+      [Function] = (_) -> null
     }
   }
 }

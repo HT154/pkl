@@ -18,9 +18,9 @@ package org.pkl.core.runtime;
 import java.io.IOException;
 import java.util.Deque;
 import org.msgpack.core.MessagePacker;
-import org.pkl.core.PklBinaryEncoding;
 import org.pkl.core.stdlib.AbstractRenderer;
 import org.pkl.core.stdlib.PklConverter;
+import org.pkl.core.util.pklbinary.PklBinaryEncoding;
 
 /**
  * An encoder/renderer for the <a

@@ -15,7 +15,7 @@
  */
 package org.pkl.commons.test
 
-import java.util.Base64
+import java.util.*
 import org.msgpack.core.MessagePack
 import org.msgpack.core.MessageUnpacker
 import org.msgpack.value.ValueType
@@ -108,9 +108,17 @@ class MessagePackDebugRenderer(bytes: ByteArray) {
     sb.toString().removePrefix("\n")
   }
 
-  // always single quote stirngs for simplicity
-  // adapted from org.pkl.core.util.yaml.YamlEmitter.emitSingleQuotedString
   fun emitString(str: String) {
+    val newlineIndex = str.indexOf('\n')
+    if (newlineIndex < 0) {
+      emitSingleLineString(str)
+    } else {
+      emitMultiLineString(str, newlineIndex)
+    }
+  }
+
+  // adapted from org.pkl.core.util.yaml.YamlEmitter.emitSingleQuotedString
+  fun emitSingleLineString(str: String) {
     sb.append('\'')
 
     val singleQuoteIndex = str.indexOfFirst { it == '\'' }
@@ -131,5 +139,43 @@ class MessagePackDebugRenderer(bytes: ByteArray) {
     }
 
     sb.append('\'')
+  }
+
+  // adapted from org.pkl.core.util.yaml.YamlEmitter.emitSingleQuotedString
+  fun emitMultiLineString(str: String, newlineIndex: Int) {
+    currIndent.append(indent)
+
+    sb.append('|')
+    if (str.first() == ' ') {
+      sb.append(indent.length)
+    }
+
+    val length = str.length
+    if (str.last() == '\n') {
+      if (length == 1 || str[length - 2] == '\n') {
+        sb.append('+')
+      }
+    } else {
+      sb.append('-')
+    }
+
+    sb.append('\n')
+
+    var start = 0
+    for (i in newlineIndex..<length) {
+      if (str[i] != '\n') continue
+      if (i == start) {
+        // don't add leading indent before newline
+        sb.append('\n')
+      } else {
+        sb.append(currIndent).append(str, start, i + 1)
+      }
+      start = i + 1
+    }
+    if (start < length) {
+      sb.append(currIndent).append(str, start, length)
+    }
+
+    currIndent.setLength(currIndent.length - indent.length)
   }
 }

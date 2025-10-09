@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.msgpack.core.MessagePack
-import org.pkl.commons.test.MessagePackDebugRenderer
 import org.pkl.commons.test.PackageServer
 import org.pkl.core.messaging.Messages.*
 import org.pkl.core.module.PathElement
@@ -309,7 +308,7 @@ abstract class AbstractServerTest {
       )
     )
     val evaluateResponse = client.receive<EvaluateResponse>()
-    assertThat(evaluateResponse.result?.debugYaml)
+    assertThat(evaluateResponse.result?.debugRendering)
       .isEqualTo(
         """
       - 6
@@ -347,7 +346,7 @@ abstract class AbstractServerTest {
       )
     )
     val evaluateResponse = client.receive<EvaluateResponse>()
-    assertThat(evaluateResponse.result?.debugYaml)
+    assertThat(evaluateResponse.result?.debugRendering)
       .isEqualTo(
         """
         - 6
@@ -644,10 +643,11 @@ abstract class AbstractServerTest {
     val response = client.receive<EvaluateResponse>()
     assertThat(response.error).isNull()
     val tripleQuote = "\"\"\""
-    assertThat(response.result?.debugYaml)
+    assertThat(response.result?.debugRendering)
       .isEqualTo(
         """
-        'res1 {
+      |
+        res1 {
           uri = "modulepath:/dir1/resource1.txt"
           text = $tripleQuote
             content
@@ -666,8 +666,8 @@ abstract class AbstractServerTest {
         res3 {
           ressy = "the module2 output"
         }
-        '
-        """
+
+    """
           .trimIndent()
       )
   }
@@ -714,7 +714,7 @@ abstract class AbstractServerTest {
     )
 
     val evaluatorResponse = client.receive<EvaluateResponse>()
-    assertThat(evaluatorResponse.result?.debugYaml).isEqualTo("1")
+    assertThat(evaluatorResponse.result?.debugRendering).isEqualTo("1")
   }
 
   @Test
@@ -754,14 +754,15 @@ abstract class AbstractServerTest {
 
     val evaluateResponse = client.receive<EvaluateResponse>()
     assertThat(evaluateResponse.result).isNotNull
-    assertThat(evaluateResponse.result?.debugYaml)
+    assertThat(evaluateResponse.result?.debugRendering)
       .isEqualTo(
         """
-        'firstName = "Pigeon"
-        lastName = "Bird"
-        fullName = "Pigeon Bird"
-        '
-        """
+        |
+          firstName = "Pigeon"
+          lastName = "Bird"
+          fullName = "Pigeon Bird"
+
+      """
           .trimIndent()
       )
   }
@@ -794,14 +795,15 @@ abstract class AbstractServerTest {
 
     val response12 = client.receive<EvaluateResponse>()
     assertThat(response12.result).isNotNull
-    assertThat(response12.result?.debugYaml)
+    assertThat(response12.result?.debugRendering)
       .isEqualTo(
         """
-        'firstName = "Pigeon"
-        lastName = "Bird"
-        fullName = "Pigeon Bird"
-        '
-        """
+        |
+          firstName = "Pigeon"
+          lastName = "Bird"
+          fullName = "Pigeon Bird"
+
+      """
           .trimIndent()
       )
 
@@ -824,14 +826,15 @@ abstract class AbstractServerTest {
 
     val response22 = client.receive<EvaluateResponse>()
     assertThat(response22.result).isNotNull
-    assertThat(response22.result?.debugYaml)
+    assertThat(response22.result?.debugRendering)
       .isEqualTo(
         """
-        'firstName = "Parrot"
-        lastName = "Bird"
-        fullName = "Parrot Bird"
-        '
-        """
+        |
+          firstName = "Parrot"
+          lastName = "Bird"
+          fullName = "Parrot Bird"
+
+      """
           .trimIndent()
       )
   }
@@ -938,7 +941,8 @@ abstract class AbstractServerTest {
     assertThat(resp2.result?.debugRendering?.trim())
       .isEqualTo(
         """
-          'res {
+        |
+          res {
             name = "Birdie"
             favoriteFruit {
               name = "dragonfruit"
@@ -947,8 +951,7 @@ abstract class AbstractServerTest {
           libContents {
             text = "This is from lib"
           }
-          '
-          """
+        """
           .trimIndent()
       )
   }
@@ -996,9 +999,6 @@ abstract class AbstractServerTest {
     assertThat(response.error)
       .contains("Rewrite rule must end with '/', but was 'https://example.com'")
   }
-
-  private val ByteArray.debugYaml
-    get() = MessagePackDebugRenderer(this).output.trimIndent()
 
   private fun TestTransport.sendCreateEvaluatorRequest(
     requestId: Long = 123,

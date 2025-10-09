@@ -23,12 +23,12 @@ import java.util.regex.Pattern;
 import org.graalvm.collections.EconomicMap;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
-import org.pkl.core.AbstractPklBinaryDecoder;
 import org.pkl.core.DataSizeUnit;
 import org.pkl.core.DurationUnit;
 import org.pkl.core.PClassInfo;
-import org.pkl.core.PklBinaryEncoding;
 import org.pkl.core.ast.member.ObjectMember;
+import org.pkl.core.util.pklbinary.AbstractPklBinaryDecoder;
+import org.pkl.core.util.pklbinary.PklBinaryEncoding;
 
 /**
  * A decoder/parser for the <a
@@ -62,6 +62,12 @@ public class VmPklBinaryDecoder extends AbstractPklBinaryDecoder {
      * @return The import typealias
      */
     VmTypeAlias importTypeAlias(String name, URI moduleUri);
+
+    class Exception extends DecodeException {
+      public Exception(URI moduleUri) {
+        super("Unable to resolve module `%s` during binary decoding", moduleUri);
+      }
+    }
   }
 
   private VmPklBinaryDecoder(MessageUnpacker unpacker, Importer importer) {
@@ -98,10 +104,17 @@ public class VmPklBinaryDecoder extends AbstractPklBinaryDecoder {
 
   @Override
   protected RuntimeException doFail(Exception cause, long offset, List<String> path) {
-    return new VmExceptionBuilder()
-        .evalError("errorDecodingFromBinary", offset, String.join(" ", path))
-        .withCause(cause)
-        .build();
+    var builder =
+        new VmExceptionBuilder()
+            .evalError("errorDecodingFromBinary", offset, String.join(" ", path))
+            .withCause(cause);
+
+    if (cause instanceof Importer.Exception) {
+      builder.withHint(
+          "Ensure the module is included in the `PklBinaryEncodingParser`'s `imports` property.");
+    }
+
+    return builder.build();
   }
 
   @Override

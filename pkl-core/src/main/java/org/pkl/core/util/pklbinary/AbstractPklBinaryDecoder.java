@@ -13,20 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.core;
+package org.pkl.core.util.pklbinary;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Formatter;
 import java.util.List;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.msgpack.core.MessagePackException;
 import org.msgpack.core.MessageUnpacker;
+import org.pkl.core.DataSizeUnit;
+import org.pkl.core.DurationUnit;
+import org.pkl.core.PklBugException;
 import org.pkl.core.util.LateInit;
 
 /**
@@ -55,7 +58,10 @@ public abstract class AbstractPklBinaryDecoder {
     } catch (IOException e) {
       throw doIOFail(e);
     } catch (MessagePackException | DecodeException e) {
-      var path = currPath.stream().map(Object::toString).collect(Collectors.toList());
+      var path = new ArrayList<String>(currPath.size());
+      for (var iter = currPath.descendingIterator(); iter.hasNext(); ) {
+        path.add(iter.next().toString());
+      }
       Collections.reverse(path);
       throw doFail(e, unpacker.getTotalReadBytes(), path);
     }

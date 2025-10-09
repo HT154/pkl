@@ -31,10 +31,12 @@ class PklBinaryEncodingRenderer extends BytesRenderer {
 /// Parse the [`pkl-binary` encoding format](https://pkl-lang.org/main/current/bindings-specification/binary-encoding.html).
 @Since { version = "0.30.0" }
 class PklBinaryEncodingParser {
+  /// Modules used to resolve the types of [Typed], [Class], and [TypeAlias] values.
+  /// 
+  /// An error will be thrown if a value is present with a type that is not in the standard library or one of the supplied imports.
+  imports: *Listing<Module>|List<Module>|Mapping<Any, Module>|Map<Any, Module>
+  
   /// Parse `pkl-binary` data and return the original value.
-  ///
-  /// This operation will attempt to import any modules, classes or typealiases present in the data.
-  /// Imports are subject to the standard [import security checks](https://pkl-lang.org/main/current/language-reference/index.html#security-checks).
   ///
   /// Cannot decode [Function] values.
   external function parse(source: Resource|Bytes): Any

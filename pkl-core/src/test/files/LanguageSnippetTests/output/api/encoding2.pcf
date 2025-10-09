@@ -1,4 +1,4 @@
-classInstance {
+original {
   dynamic {
     hello = "world"
     ["hello"] = "world"
@@ -22,7 +22,7 @@ classInstance {
   regex = Regex("foo.*")
   func = null
   bytes = Bytes(1, 2, 3)
-  moduleClass = "encoding2"
+  moduleClass = "encoding1"
   baseModuleClass = "ModuleClass"
   encodingModuleClass = "pkl.encoding"
   stdlibClass = "PcfRenderer"
@@ -61,7 +61,7 @@ decoded {
   regex = Regex("foo.*")
   func = null
   bytes = Bytes(1, 2, 3)
-  moduleClass = "encoding2"
+  moduleClass = "encoding1"
   baseModuleClass = "ModuleClass"
   encodingModuleClass = "pkl.encoding"
   stdlibClass = "PcfRenderer"
