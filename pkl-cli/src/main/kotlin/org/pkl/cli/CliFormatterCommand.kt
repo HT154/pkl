@@ -42,11 +42,12 @@ constructor(
   private val overwrite: Boolean,
   private val diffNameOnly: Boolean,
   private val silent: Boolean,
+  private val maxLineLength: Int,
   private val consoleWriter: Writer = System.out.writer(),
   private val errWriter: Writer = System.err.writer(),
 ) : CliCommand(CliBaseOptions()) {
   private fun format(contents: String): String {
-    return Formatter().format(contents, grammarVersion)
+    return Formatter().format(contents, grammarVersion, maxLineLength)
   }
 
   private fun writeErr(error: String) {

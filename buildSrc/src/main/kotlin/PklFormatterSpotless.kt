@@ -37,6 +37,7 @@ class PklFormatterStep(@Transient private val configuration: Configuration) : Se
 class PklFormatterFunc(@Transient private val configuration: Configuration) :
   FormatterFunc, Serializable {
   companion object {
+    private const val MAX = 100
     @Serial private const val serialVersionUID: Long = 1L
   }
 
@@ -54,13 +55,13 @@ class PklFormatterFunc(@Transient private val configuration: Configuration) :
   private val grammarVersionLatestMethod by lazy { grammarVersionClass.getMethod("latest") }
 
   private val formatMethod by lazy {
-    formatterClass.getMethod("format", String::class.java, grammarVersionClass)
+    formatterClass.getMethod("format", String::class.java, grammarVersionClass, Int::class.java)
   }
 
   private val formatterInstance by lazy { formatterClass.getConstructor().newInstance() }
 
   override fun apply(input: String): String {
     val latestGrammarVersion = grammarVersionLatestMethod(null)
-    return formatMethod(formatterInstance, input, latestGrammarVersion) as String
+    return formatMethod(formatterInstance, input, latestGrammarVersion, MAX) as String
   }
 }

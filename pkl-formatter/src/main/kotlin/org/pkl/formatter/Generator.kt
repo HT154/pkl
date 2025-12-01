@@ -29,7 +29,7 @@ import org.pkl.formatter.ast.SpaceOrLine
 import org.pkl.formatter.ast.Text
 import org.pkl.formatter.ast.Wrap
 
-internal class Generator {
+internal class Generator(val maxLineLength: Int) {
   private val buf: StringBuilder = StringBuilder()
   private var indent: Int = 0
   private var size: Int = 0
@@ -45,9 +45,9 @@ internal class Generator {
       is Empty -> {}
       is Nodes -> node.nodes.forEach { node(it, wrap) }
       is Group -> {
-        val width = node.nodes.sumOf { it.width(wrapped) }
+        val width = node.nodes.sumOf { it.width(wrapped, maxLineLength) }
         val wrap =
-          if (size + width > MAX) {
+          if (size + width > maxLineLength) {
             wrapped += node.id
             Wrap.ENABLED
           } else {
@@ -143,8 +143,6 @@ internal class Generator {
   }
 
   companion object {
-    // max line length
-    const val MAX = 100
     private const val INDENT = "  "
   }
 }

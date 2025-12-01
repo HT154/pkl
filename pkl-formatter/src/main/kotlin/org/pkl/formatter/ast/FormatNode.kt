@@ -15,8 +15,6 @@
  */
 package org.pkl.formatter.ast
 
-import org.pkl.formatter.Generator
-
 enum class Wrap {
   ENABLED,
   DETECT;
@@ -25,17 +23,19 @@ enum class Wrap {
 }
 
 sealed interface FormatNode {
-  fun width(wrapped: Set<Int>): Int =
+  fun width(wrapped: Set<Int>, maxLineLength: Int): Int =
     when (this) {
-      is Nodes -> nodes.sumOf { it.width(wrapped) }
-      is Group -> nodes.sumOf { it.width(wrapped) }
-      is Indent -> nodes.sumOf { it.width(wrapped) }
-      is IfWrap -> if (id in wrapped) ifWrap.width(wrapped) else ifNotWrap.width(wrapped)
+      is Nodes -> nodes.sumOf { it.width(wrapped, maxLineLength) }
+      is Group -> nodes.sumOf { it.width(wrapped, maxLineLength) }
+      is Indent -> nodes.sumOf { it.width(wrapped, maxLineLength) }
+      is IfWrap ->
+        if (id in wrapped) ifWrap.width(wrapped, maxLineLength)
+        else ifNotWrap.width(wrapped, maxLineLength)
       is Text -> text.length
       SpaceOrLine,
       Space -> 1
       ForceLine,
-      is MultilineStringGroup -> Generator.MAX
+      is MultilineStringGroup -> maxLineLength
       Empty -> 0
       Line -> 0
     }

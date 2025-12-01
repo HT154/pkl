@@ -31,8 +31,12 @@ class Formatter {
    * @return the formatted Pkl source code as a string
    * @throws java.io.IOException if the file cannot be read
    */
-  fun format(path: Path, grammarVersion: GrammarVersion = GrammarVersion.latest()): String {
-    return format(Files.readString(path), grammarVersion)
+  fun format(
+    path: Path,
+    grammarVersion: GrammarVersion = GrammarVersion.latest(),
+    maxLineLength: Int = DEFAULT_MAX_LINE_LENGTH,
+  ): String {
+    return format(Files.readString(path), grammarVersion, maxLineLength)
   }
 
   /**
@@ -42,15 +46,23 @@ class Formatter {
    * @param grammarVersion grammar compatibility version
    * @return the formatted Pkl source code as a string
    */
-  fun format(text: String, grammarVersion: GrammarVersion = GrammarVersion.latest()): String {
+  fun format(
+    text: String,
+    grammarVersion: GrammarVersion = GrammarVersion.latest(),
+    maxLineLength: Int = DEFAULT_MAX_LINE_LENGTH,
+  ): String {
     val parser = GenericParser()
     val builder = Builder(text, grammarVersion)
-    val gen = Generator()
+    val gen = Generator(maxLineLength)
     val ast = parser.parseModule(text)
     val formatAst = builder.format(ast)
     // force a line at the end of the file
     gen.generate(Nodes(listOf(formatAst, ForceLine)))
     return gen.toString()
+  }
+
+  companion object {
+    public const val DEFAULT_MAX_LINE_LENGTH = 100
   }
 }
 
@@ -60,7 +72,6 @@ enum class GrammarVersion(val version: Int, val versionSpan: String) {
   V2(2, "0.30+");
 
   companion object {
-    @JvmStatic
-    fun latest(): GrammarVersion = entries.maxBy { it.version }
+    @JvmStatic fun latest(): GrammarVersion = entries.maxBy { it.version }
   }
 }

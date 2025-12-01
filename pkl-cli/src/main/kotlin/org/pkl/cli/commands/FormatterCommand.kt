@@ -23,9 +23,12 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.enum
+import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.path
 import java.nio.file.Path
 import org.pkl.cli.CliFormatterCommand
+import org.pkl.commons.cli.commands.single
+import org.pkl.formatter.Formatter
 import org.pkl.formatter.GrammarVersion
 
 class FormatterCommand : CliktCommand(name = "format") {
@@ -93,7 +96,16 @@ class FormatterCommand : CliktCommand(name = "format") {
       )
       .flag(default = false)
 
+  val maxLineLength: Int by
+    option(
+        names = arrayOf("--max-line-length"),
+        help = "Set the line length at which code will be wrapped.",
+      )
+      .single()
+      .int()
+      .default(Formatter.DEFAULT_MAX_LINE_LENGTH)
+
   override fun run() {
-    CliFormatterCommand(paths, grammarVersion, overwrite, diffNameOnly, silent).run()
+    CliFormatterCommand(paths, grammarVersion, overwrite, diffNameOnly, silent, maxLineLength).run()
   }
 }
