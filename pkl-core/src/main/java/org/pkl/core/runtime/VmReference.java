@@ -16,12 +16,11 @@
 package org.pkl.core.runtime;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.organicdesign.fp.collections.RrbTree;
 import org.organicdesign.fp.collections.RrbTree.ImRrbt;
 import org.pkl.core.Composite;
@@ -32,7 +31,6 @@ import org.pkl.core.PNull;
 import org.pkl.core.PObject;
 import org.pkl.core.PType;
 import org.pkl.core.TypeAlias;
-import org.pkl.core.TypeParameter.Variance;
 import org.pkl.core.util.Nullable;
 
 public final class VmReference extends VmValue {
@@ -48,9 +46,16 @@ public final class VmReference extends VmValue {
 
   private static final PType nullType = new PType.Class(BaseModule.getNullClass().export());
 
-  private static final Set<TypeAlias> intAliasTypes =
-      BaseModule.getIntTypeAliases().stream().map((it) -> it.export()).collect(Collectors.toSet());
+  private static final Set<TypeAlias> intAliasTypes = getIntAliasTypes();
   private static final Set<TypeAlias> preservedAliasTypes = intAliasTypes;
+
+  private static Set<TypeAlias> getIntAliasTypes() {
+    var types = new HashSet<TypeAlias>();
+    for (var t : BaseModule.getIntTypeAliases()) {
+      types.add(t.export());
+    }
+    return types;
+  }
 
   public VmReference(VmValue rootValue) {
     this(Set.of(new PType.Class(rootValue.getVmClass().export())), rootValue, RrbTree.empty());
@@ -81,46 +86,55 @@ public final class VmReference extends VmValue {
   // * flattening unions
   // * when moduleClass is supplied, replace PType.MODULE with appropriate PType.Class
   // * drop PType.NOTHING, PType.Function, and PType.TypeVariable
-  private static Stream<PType> simplifyType(PType type, @Nullable PClass moduleClass) {
+  private static Set<PType> simplifyType(PType type, @Nullable PClass moduleClass) {
+    var types = new HashSet<PType>();
+    simplifyType(type, moduleClass, types);
+    return types;
+  }
+
+  private static void simplifyType(PType type, @Nullable PClass moduleClass, Set<PType> result) {
     if (type == PType.UNKNOWN || type instanceof PType.StringLiteral) {
-      return Stream.of(type);
+      result.add(type);
     } else if (type instanceof PType.Class klass) {
-      return Stream.of(
-          klass.getTypeArguments().isEmpty()
-              ? klass
-              : new PType.Class(
-                  klass.getPClass(),
-                  klass.getTypeArguments().stream()
-                      .map(
-                          (it) -> {
-                            var tt = simplifyType(it, moduleClass).toList();
-                            return (tt.size() == 1 ? tt.getFirst() : new PType.Union(tt));
-                          })
-                      .toList()));
+      if (klass.getTypeArguments().isEmpty()) {
+        result.add(klass);
+      } else {
+        var typeArgs = new ArrayList<PType>(klass.getTypeArguments().size());
+        for (var arg : klass.getTypeArguments()) {
+          var tt = new ArrayList<>(simplifyType(arg, moduleClass));
+          typeArgs.add(tt.size() == 1 ? tt.get(0) : new PType.Union(tt));
+        }
+        result.add(new PType.Class(klass.getPClass(), typeArgs));
+      }
     } else if (type instanceof PType.Nullable nullable) {
-      return Stream.concat(simplifyType(nullable.getBaseType(), moduleClass), Stream.of(nullType));
+      simplifyType(nullable.getBaseType(), moduleClass, result);
+      result.add(nullType);
     } else if (type instanceof PType.Constrained constrained) {
-      return simplifyType(constrained.getBaseType(), moduleClass);
+      simplifyType(constrained.getBaseType(), moduleClass, result);
     } else if (type instanceof PType.Alias alias) {
-      return preservedAliasTypes.contains(alias.getTypeAlias())
-          ? Stream.of(alias)
-          : simplifyType(alias.getAliasedType(), alias.getTypeAlias().getModuleClass());
+      if (preservedAliasTypes.contains(alias.getTypeAlias())) {
+        result.add(alias);
+      } else {
+        simplifyType(alias.getAliasedType(), alias.getTypeAlias().getModuleClass(), result);
+      }
     } else if (type instanceof PType.Union union) {
-      return union.getElementTypes().stream().flatMap((it) -> simplifyType(it, moduleClass));
+      for (var t : union.getElementTypes()) {
+        simplifyType(t, moduleClass, result);
+      }
     } else if (type == PType.MODULE && moduleClass != null) {
-      return Stream.of(new PType.Class(moduleClass));
+      result.add(new PType.Class(moduleClass));
     }
-    return Stream.empty();
   }
 
   public @Nullable VmReference withPropertyAccess(Identifier property) {
-    var candidates =
-        candidateTypes.stream()
-            .flatMap((it) -> getCandidatePropertyType(it, property.toString()))
-            .collect(Collectors.toUnmodifiableSet());
+    Set<PType> candidates = new HashSet<>();
+    for (var t : candidateTypes) {
+      getCandidatePropertyType(t, property.toString(), candidates);
+    }
     if (candidates.isEmpty()) {
-      return null;
+      return null; // no valid property found
     } else if (candidates.contains(PType.UNKNOWN)) {
+      // optimization: unknown allows all references, erase all candidates to only unknown
       candidates = Set.of(PType.UNKNOWN);
     }
     return new VmReference(
@@ -128,76 +142,77 @@ public final class VmReference extends VmValue {
   }
 
   public @Nullable VmReference withSubscriptAccess(Object key) {
-    var candidates =
-        candidateTypes.stream()
-            .flatMap((it) -> getCandidateSubscriptType(it, key))
-            .collect(Collectors.toUnmodifiableSet());
+    Set<PType> candidates = new HashSet<>();
+    for (var t : candidateTypes) {
+      getCandidateSubscriptType(t, key, candidates);
+    }
     if (candidates.isEmpty()) {
-      return null;
+      return null; // no valid subscript found
     } else if (candidates.contains(PType.UNKNOWN)) {
+      // optimization: unknown allows all references, erase all candidates to only unknown
       candidates = Set.of(PType.UNKNOWN);
     }
     return new VmReference(candidates, rootValue, path.append(Access.subscript(key)));
   }
 
   @SuppressWarnings("DuplicatedCode")
-  private static Stream<PType> getCandidatePropertyType(PType type, String property) {
+  private static void getCandidatePropertyType(PType type, String property, Set<PType> result) {
     if (type == PType.UNKNOWN) {
-      return Stream.of(type);
+      result.add(type);
+      return;
     }
     if (!(type instanceof PType.Class klass)) {
-      return Stream.empty();
+      return;
     }
     if (klass.getPClass().getInfo() == PClassInfo.Dynamic) {
-      return Stream.of(PType.UNKNOWN);
+      result.add(PType.UNKNOWN);
+      return;
     }
     if (klass.getPClass().getInfo() == PClassInfo.Listing
         || klass.getPClass().getInfo() == PClassInfo.Mapping) {
-      return Stream.empty();
+      return;
     }
     // Typed
     var prop = klass.getPClass().getAllProperties().get(property);
     if (prop == null || prop.getModifiers().contains(Modifier.EXTERNAL)) {
-      return Stream.empty();
+      return;
     }
-    return simplifyType(prop.getType(), klass.getPClass().getModuleClass());
+    simplifyType(prop.getType(), klass.getPClass().getModuleClass(), result);
   }
 
   @SuppressWarnings("DuplicatedCode")
-  private static Stream<PType> getCandidateSubscriptType(PType type, Object key) {
+  private static void getCandidateSubscriptType(PType type, Object key, Set<PType> result) {
     if (type == PType.UNKNOWN) {
-      return Stream.of(type);
+      result.add(type);
+      return;
     }
     if (!(type instanceof PType.Class klass)) {
-      return Stream.empty();
+      return;
     }
     if (klass.getPClass().getInfo() == PClassInfo.Dynamic) {
-      return Stream.of(PType.UNKNOWN);
+      result.add(PType.UNKNOWN);
+      return;
     }
     if (klass.getPClass().getInfo() == PClassInfo.Listing) {
       if (key instanceof Long) {
-        var typeArgs = klass.getTypeArguments();
-        return simplifyType(typeArgs.get(0), klass.getPClass().getModuleClass());
-      } else {
-        return Stream.empty();
+        simplifyType(klass.getTypeArguments().get(0), klass.getPClass().getModuleClass(), result);
       }
+      return;
     }
     if (klass.getPClass().getInfo() == PClassInfo.Mapping) {
       var typeArgs = klass.getTypeArguments();
-      return simplifyType(typeArgs.get(0), klass.getPClass().getModuleClass())
-              .anyMatch(
-                  (it) ->
-                      it == PType.UNKNOWN
-                          || (it instanceof PType.Class klazz
-                              && klazz.getPClass().getInfo() == PClassInfo.forValue(key))
-                          || (it instanceof PType.StringLiteral stringLiteral
-                              && stringLiteral.getLiteral().equals(key)))
-          ? simplifyType(typeArgs.get(1), klass.getPClass().getModuleClass())
-          : Stream.empty();
+      var keyTypes = simplifyType(typeArgs.get(0), klass.getPClass().getModuleClass());
+      for (var kt : keyTypes) {
+        if (kt == PType.UNKNOWN
+            || (kt instanceof PType.Class klazz
+                && klazz.getPClass().getInfo() == PClassInfo.forValue(key))
+            || (kt instanceof PType.StringLiteral stringLiteral
+                && stringLiteral.getLiteral().equals(key))) {
+          simplifyType(typeArgs.get(1), klass.getPClass().getModuleClass(), result);
+          return;
+        }
+      }
     }
-
-    // Typed
-    return Stream.empty();
   }
 
   public boolean checkType(PType type, @Nullable PClass moduleClass) {
@@ -206,21 +221,48 @@ public final class VmReference extends VmValue {
       return true;
     }
 
-    //  should this be any or all?
-    return simplifyType(type, moduleClass)
-        .anyMatch((t) -> candidateTypes.stream().anyMatch((c) -> isSubtype(c, t)));
+    // check if any candidate type is a subtype of and check type
+    for (var t : simplifyType(type, moduleClass)) {
+      for (var c : candidateTypes) {
+        if (isSubclass(c, t)) return true;
+      }
+    }
+    return false;
   }
 
-  private static boolean isSubtype(PType a, PType b) {
-    if (a instanceof PType.StringLiteral aStr && b instanceof PType.StringLiteral bStr) {
-      return aStr.getLiteral().equals(bStr.getLiteral());
+  private static boolean isSubclass(PType a, PType b) {
+    // checks if A is a subtype of B
+    // cases (A -> B)
+    // * StringLiteral -> StringLiteral: if literals are the same
+    // * StringLiteral -> Class: B is String
+    // * Int Alias -> Class: B is a subtype of Number (Int|Float|Number)
+    // * Int Alias -> Alias
+    //   * same alias
+    //   * Int8 is Int16|Int32
+    //   * Int16 is Int32
+    //   * UInt8 is Int16|Int32|Uint16|UInt32|UInt
+    //   * UInt16 is Int32|UInt32|UInt
+    //   * UInt32 is UInt
+    // * Class -> Class: if same class or A is a subclass of B
+    //   * if type args are present, must have equal number of them
+    //   * for each pair of type args, check variance
+    //     * invariant: A_i must be identical to B_i
+    //     * covariant: A_i must be a subtype of B_i
+    //     * contravariant: B_i must be a subtype of A_i
+
+    if (a instanceof PType.StringLiteral aStr) {
+      if (b instanceof PType.StringLiteral bStr) {
+        return aStr.getLiteral().equals(bStr.getLiteral());
+      } else if (b instanceof PType.Class bClass) {
+        return bClass.getPClass() == BaseModule.getStringClass().export();
+      }
     } else if (a instanceof PType.Alias aAlias) {
       var aa = aAlias.getTypeAlias();
       if (intAliasTypes.contains(aa)) {
         // special casing for stdlib Int typealiases
         if (b instanceof PType.Class bClass) {
-          // a is an int alias, b is a Number
-          return isSubtype(bClass.getPClass(), BaseModule.getNumberClass().export());
+          // A is an int alias, B is a Number (sub)class
+          return isSubclass(bClass.getPClass(), BaseModule.getNumberClass().export());
         } else if (b instanceof PType.Alias bAlias) {
           var bb = bAlias.getTypeAlias();
           if (aa == bb) {
@@ -247,17 +289,22 @@ public final class VmReference extends VmValue {
         }
       }
     } else if (a instanceof PType.Class aClass && b instanceof PType.Class bClass) {
-      if (!isSubtype(aClass.getPClass(), bClass.getPClass())) {
+      if (!isSubclass(aClass.getPClass(), bClass.getPClass())) {
         return false;
       }
       var aArgs = aClass.getTypeArguments();
       var bArgs = bClass.getTypeArguments();
       var bParams = bClass.getPClass().getTypeParameters();
       if (aArgs.size() != bArgs.size()) {
-        return true;
+        return false;
       }
+      // check variance of type args pairwise
       for (var i = 0; i < aArgs.size(); i++) {
-        if (!isSubtype(aArgs.get(i), bArgs.get(i), bParams.get(i).getVariance())) {
+        if (!switch (bParams.get(i).getVariance()) {
+          case INVARIANT -> aArgs.get(i) == bArgs.get(i);
+          case COVARIANT -> isSubclass(aArgs.get(i), bArgs.get(i));
+          case CONTRAVARIANT -> isSubclass(bArgs.get(i), aArgs.get(i));
+        }) {
           return false;
         }
       }
@@ -266,16 +313,8 @@ public final class VmReference extends VmValue {
     return false;
   }
 
-  private static boolean isSubtype(PType a, PType b, Variance variance) {
-    return switch (variance) {
-      case INVARIANT -> a == b;
-      case COVARIANT -> isSubtype(a, b);
-      case CONTRAVARIANT -> isSubtype(b, a);
-    };
-  }
-
-  private static boolean isSubtype(PClass a, PClass b) {
-    return a == b || a.getSuperclass() != null && isSubtype(a.getSuperclass(), b);
+  private static boolean isSubclass(PClass a, PClass b) {
+    return a == b || a.getSuperclass() != null && isSubclass(a.getSuperclass(), b);
   }
 
   @Override
