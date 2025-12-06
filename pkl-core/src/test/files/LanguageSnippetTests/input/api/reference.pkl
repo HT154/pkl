@@ -18,9 +18,9 @@ class AProperties {
 }
 
 class B extends Resource {
-  aId: String|Reference<String>
-  aProperties: AProperties|Reference<AProperties>
-  aValues: Listing<Int|Reference<Int>>
+  aId: String | Reference<String>
+  aProperties: AProperties | Reference<AProperties>
+  aValues: Listing<Int | Reference<Int>>
 }
 
 a: A = new {
@@ -45,11 +45,17 @@ b: B = new {
 
 function renderReference(ref: Reference): String =
   if (ref.getRootValue() is Resource)
-    (ref.getRootValue() as Resource).name + ref.getPath().toList().map((elem) ->
-        if (elem.isProperty) ".\(elem.property)"
-        else "[\(elem.key)]"
-      ).join("")
-  else throw("can only render references rooted to Resource instances")
+    let (resource = ref.getRootValue() as Resource)
+    let (
+      path =
+        ref
+          .getPath()
+          .toList()
+          .map((elem) -> if (elem.isProperty) ".\(elem.property)" else "[\(elem.key)]")
+    )
+      "${\(resource.name)\(path.join(""))}"
+  else
+    throw("can only render references rooted to Resource instances")
 
 output {
   renderer {

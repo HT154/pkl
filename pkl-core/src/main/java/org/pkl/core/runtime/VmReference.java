@@ -45,7 +45,6 @@ public final class VmReference extends VmValue {
   private boolean forced = false;
 
   private static final PType nullType = new PType.Class(BaseModule.getNullClass().export());
-
   private static final Set<TypeAlias> intAliasTypes = getIntAliasTypes();
   private static final Set<TypeAlias> preservedAliasTypes = intAliasTypes;
 
@@ -169,7 +168,9 @@ public final class VmReference extends VmValue {
       return;
     }
     if (klass.getPClass().getInfo() == PClassInfo.Listing
-        || klass.getPClass().getInfo() == PClassInfo.Mapping) {
+        || klass.getPClass().getInfo() == PClassInfo.List
+        || klass.getPClass().getInfo() == PClassInfo.Mapping
+        || klass.getPClass().getInfo() == PClassInfo.Map) {
       return;
     }
     // Typed
@@ -193,13 +194,15 @@ public final class VmReference extends VmValue {
       result.add(PType.UNKNOWN);
       return;
     }
-    if (klass.getPClass().getInfo() == PClassInfo.Listing) {
+    if (klass.getPClass().getInfo() == PClassInfo.Listing
+        || klass.getPClass().getInfo() == PClassInfo.List) {
       if (key instanceof Long) {
         simplifyType(klass.getTypeArguments().get(0), klass.getPClass().getModuleClass(), result);
       }
       return;
     }
-    if (klass.getPClass().getInfo() == PClassInfo.Mapping) {
+    if (klass.getPClass().getInfo() == PClassInfo.Mapping
+        || klass.getPClass().getInfo() == PClassInfo.Map) {
       var typeArgs = klass.getTypeArguments();
       var keyTypes = simplifyType(typeArgs.get(0), klass.getPClass().getModuleClass());
       for (var kt : keyTypes) {
@@ -224,13 +227,13 @@ public final class VmReference extends VmValue {
     // check if any candidate type is a subtype of and check type
     for (var t : simplifyType(type, moduleClass)) {
       for (var c : candidateTypes) {
-        if (isSubclass(c, t)) return true;
+        if (isSubtype(c, t)) return true;
       }
     }
     return false;
   }
 
-  private static boolean isSubclass(PType a, PType b) {
+  private static boolean isSubtype(PType a, PType b) {
     // checks if A is a subtype of B
     // cases (A -> B)
     // * StringLiteral -> StringLiteral: if literals are the same
@@ -262,7 +265,7 @@ public final class VmReference extends VmValue {
         // special casing for stdlib Int typealiases
         if (b instanceof PType.Class bClass) {
           // A is an int alias, B is a Number (sub)class
-          return isSubclass(bClass.getPClass(), BaseModule.getNumberClass().export());
+          return bClass.getPClass().isSubclassOf(BaseModule.getNumberClass().export());
         } else if (b instanceof PType.Alias bAlias) {
           var bb = bAlias.getTypeAlias();
           if (aa == bb) {
@@ -289,7 +292,7 @@ public final class VmReference extends VmValue {
         }
       }
     } else if (a instanceof PType.Class aClass && b instanceof PType.Class bClass) {
-      if (!isSubclass(aClass.getPClass(), bClass.getPClass())) {
+      if (!aClass.getPClass().isSubclassOf(bClass.getPClass())) {
         return false;
       }
       var aArgs = aClass.getTypeArguments();
@@ -302,8 +305,8 @@ public final class VmReference extends VmValue {
       for (var i = 0; i < aArgs.size(); i++) {
         if (!switch (bParams.get(i).getVariance()) {
           case INVARIANT -> aArgs.get(i) == bArgs.get(i);
-          case COVARIANT -> isSubclass(aArgs.get(i), bArgs.get(i));
-          case CONTRAVARIANT -> isSubclass(bArgs.get(i), aArgs.get(i));
+          case COVARIANT -> isSubtype(aArgs.get(i), bArgs.get(i));
+          case CONTRAVARIANT -> isSubtype(bArgs.get(i), aArgs.get(i));
         }) {
           return false;
         }
@@ -311,10 +314,6 @@ public final class VmReference extends VmValue {
       return true;
     }
     return false;
-  }
-
-  private static boolean isSubclass(PClass a, PClass b) {
-    return a == b || a.getSuperclass() != null && isSubclass(a.getSuperclass(), b);
   }
 
   @Override

@@ -20,6 +20,7 @@ import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Fallback;
+import com.oracle.truffle.api.dsl.ImportStatic;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.Frame;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -1948,8 +1949,9 @@ public abstract class TypeNode extends PklNode {
     }
   }
 
-  public static final class ReferenceTypeNode extends ObjectSlotTypeNode {
-    @Child private TypeNode valueTypeNode;
+  @ImportStatic(BaseModule.class)
+  public abstract static class ReferenceTypeNode extends ObjectSlotTypeNode {
+    private TypeNode valueTypeNode;
     @Child private ExpressionNode getModuleNode;
 
     public ReferenceTypeNode(SourceSection sourceSection, TypeNode valueTypeNode) {
@@ -1958,30 +1960,27 @@ public abstract class TypeNode extends PklNode {
       this.getModuleNode = new GetModuleNode(sourceSection);
     }
 
-    @Override
-    protected Object executeLazily(VirtualFrame frame, Object value) {
-      return doExecute(frame, value);
-    }
-
-    @Override
-    public Object executeEagerly(VirtualFrame frame, Object value) {
-      return doExecute(frame, value);
-    }
-
-    private Object doExecute(VirtualFrame frame, Object value) {
-      if (value instanceof VmReference vmReference) {
-        var module = (VmTyped) getModuleNode.executeGeneric(frame);
-        if (vmReference.checkType(TypeNode.export(valueTypeNode), module.getVmClass().export())) {
-          return value;
-        }
-        // TODO better exceptions?
-        throw new VmExceptionBuilder()
-            .adhocEvalError(
-                "reference type mismatch Reference<%s> and %s",
-                vmReference.getCandidateTypes(), TypeNode.export(valueTypeNode))
-            .build();
+    @SuppressWarnings("unused")
+    @Specialization(guards = "value.getVmClass() == getReferenceClass()")
+    protected Object eval(VirtualFrame frame, VmReference value) {
+      if (valueTypeNode.isNoopTypeCheck()) {
+        return value;
       }
 
+      var module = (VmTyped) getModuleNode.executeGeneric(frame);
+      if (value.checkType(TypeNode.export(valueTypeNode), module.getVmClass().export())) {
+        return value;
+      }
+      // TODO better exceptions?
+      throw new VmExceptionBuilder()
+          .adhocEvalError(
+              "reference type mismatch Reference<%s> and %s",
+              value.getCandidateTypes(), TypeNode.export(valueTypeNode))
+          .build();
+    }
+
+    @Fallback
+    protected Object fallback(Object value) {
       throw typeMismatch(value, BaseModule.getReferenceClass());
     }
 
@@ -2006,6 +2005,11 @@ public abstract class TypeNode extends PklNode {
         return false;
       }
       return valueTypeNode.isEquivalentTo(referenceTypeNode.valueTypeNode);
+    }
+
+    @Override
+    public boolean isNoopTypeCheck() {
+      return valueTypeNode.isNoopTypeCheck();
     }
 
     @Override

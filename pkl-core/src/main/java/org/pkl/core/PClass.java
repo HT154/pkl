@@ -146,6 +146,10 @@ public final class PClass extends Member implements Value {
     return getDisplayName();
   }
 
+  public boolean isSubclassOf(PClass other) {
+    return this == other || getSuperclass() != null && getSuperclass().isSubclassOf(other);
+  }
+
   public abstract static class ClassMember extends Member {
     @Serial private static final long serialVersionUID = 0L;
 

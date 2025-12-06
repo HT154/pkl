@@ -288,7 +288,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
         }
 
         if (clazz.isReferenceClass()) {
-          return new ReferenceTypeNode(sourceSection, typeArgumentNodes[0].execute(frame));
+          return ReferenceTypeNodeGen.create(sourceSection, typeArgumentNodes[0].execute(frame));
         }
 
         throw exceptionBuilder()
