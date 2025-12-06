@@ -1,10 +1,5 @@
 –– Pkl Error ––
-Expected value of type `Reference`, but got type `Reference`.
-Value: Reference(new A { name = "a"; id = "some-a-value" })
-
-xxxx | external const function Reference<T>(rootValue: T): Reference<T>
-                                                           ^^^^^^^^^^^^
-at pkl.base#Reference (pkl:base)
+reference type mismatch Reference<[org.pkl.core.PType$Class@303a5119]> and org.pkl.core.PType$TypeVariable@75b3673
 
 xx | local aRef: Reference<A> = Reference(a)
                                 ^^^^^^^^^^^^
@@ -14,10 +9,10 @@ xx | aId = aRef.id
            ^^^^
 at reference#b.aId (file:///$snippetsDir/input/api/reference.pkl)
 
-xxx | text = renderer.renderDocument(value)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+xxx | renderer.renderDocument(value)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 at pkl.base#Module.output.text (pkl:base)
 
-xxx | bytes = text.encodeToBytes("UTF-8")
-              ^^^^
+xxx | if (renderer is BytesRenderer) renderer.renderDocument(value) else text.encodeToBytes("UTF-8")
+                                                                         ^^^^
 at pkl.base#Module.output.bytes (pkl:base)

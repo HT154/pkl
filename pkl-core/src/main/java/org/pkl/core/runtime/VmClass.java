@@ -637,7 +637,7 @@ public final class VmClass extends VmValue {
                 typeParameters,
                 properties,
                 methods,
-                isModuleClass() ? null : getModule().getVmClass().export());
+                classInfo.isModuleClass() ? null : getModule().getVmClass().export());
 
         for (var parameter : typeParameters) {
           parameter.initOwner(__pClass);
