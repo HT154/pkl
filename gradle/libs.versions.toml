@@ -8,7 +8,7 @@ geantyref = "1.+"
 googleJavaFormat = "1.35.0"
 # must not use `+` because used in download URL
 # 23.1.x requires JDK 20+
-graalVm = "25.0.0"
+graalVm = "25.0.2"
 #noinspection UnusedVersionCatalogEntry
 graalVmJdkVersion = "25.0.0"
 # slightly hacky but convenient place so we remember to update the checksum
