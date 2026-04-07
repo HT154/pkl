@@ -33,7 +33,7 @@ jimfs = "1.+"
 # (at least not without additional configuration; tested with 3.25.1 and 3.27.1)
 jline = "3.23.0"
 jmh = "1.+"
-jmhPlugin = "0.7.2"
+jmhPlugin = "0.7.3"
 jsr305 = "3.+"
 junit = "5.+"
 junitPlatform = "1.+"
