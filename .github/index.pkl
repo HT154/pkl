@@ -26,6 +26,18 @@ testReports {
   }
 }
 
+dependabot {
+  updates {
+    new {
+      `package-ecosystem` = "gradle"
+      directory = "/"
+      schedule {
+        interval = "weekly"
+      }
+    }
+  }
+}
+
 local baseGradleCheck: SimpleGradleJob = new {
   isRelease = false
   command = "check"
