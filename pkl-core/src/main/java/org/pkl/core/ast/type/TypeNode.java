@@ -2142,7 +2142,7 @@ public abstract class TypeNode extends PklNode {
 
     @Specialization(guards = "value.getVmClass() == getReferenceClass()")
     protected Object eval(VirtualFrame frame, VmReference value) {
-      if (referentTypeNode.isNoopTypeCheck()) {
+      if (domainTypeNode.isNoopTypeCheck() && referentTypeNode.isNoopTypeCheck()) {
         return value;
       }
 
@@ -2156,7 +2156,7 @@ public abstract class TypeNode extends PklNode {
       }
 
       var module = (VmTyped) getModuleNode.executeGeneric(frame);
-      if (value.checkType(referentType, module.getVmClass().export())) {
+      if (value.referentTypeIsSubtypeOf(referentType, module.getVmClass().export())) {
         return value;
       }
 
@@ -2175,9 +2175,7 @@ public abstract class TypeNode extends PklNode {
             if (typeNode instanceof ConstrainedTypeNode) {
               CompilerDirectives.transferToInterpreter();
               var err =
-                  exceptionBuilder()
-                      .evalError("invalidReferenceTypeAnnotationWithConstraint")
-                      .withLocation(this);
+                  exceptionBuilder().evalError("invalidReferenceTypeAnnotationWithConstraint");
               if (aliasSourceSection != null) {
                 err.withSourceSection(aliasSourceSection);
               }
@@ -2194,7 +2192,10 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     protected boolean acceptTypeNode(boolean visitTypeArguments, TypeNodeConsumer consumer) {
-      if (visitTypeArguments) return consumer.accept(this) && consumer.accept(referentTypeNode);
+      if (visitTypeArguments)
+        return consumer.accept(this)
+            && consumer.accept(domainTypeNode)
+            && consumer.accept(referentTypeNode);
       return consumer.accept(this);
     }
 
@@ -2205,7 +2206,7 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     public VmList getTypeArgumentMirrors() {
-      return VmList.of(referentTypeNode.getMirror());
+      return VmList.of(domainTypeNode.getMirror(), referentTypeNode.getMirror());
     }
 
     @Override
@@ -2218,12 +2219,15 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     public boolean isNoopTypeCheck() {
-      return referentTypeNode.isNoopTypeCheck();
+      return domainTypeNode.isNoopTypeCheck() && referentTypeNode.isNoopTypeCheck();
     }
 
     @Override
     protected PType doExport() {
-      return new PType.Class(RefModule.getReferenceClass().export(), referentTypeNode.doExport());
+      return new PType.Class(
+          RefModule.getReferenceClass().export(),
+          domainTypeNode.doExport(),
+          referentTypeNode.doExport());
     }
 
     @Override
