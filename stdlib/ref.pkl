@@ -20,10 +20,22 @@
 /// domain-specific references to values that may not be known during evaluation.
 /// They are particularly suited for configuring execution systems where tasks have well-typed
 /// inputs and output.
+///
+/// WARNING: The API and semantics of references are subject to change in a future release.
+/// The Pkl team is soliciting feedback from authors of libraries considering adopting references.
+/// For questions and feedback, please reach out via
+/// [GitHub Discussions](https://github.com/apple/pkl/discussions) or
+/// [create an issue](https://github.com/apple/pkl/issues/new).
 @ModuleInfo { minPklVersion = "0.32.0" }
 module pkl.ref
 
 /// Creates a deferred [Reference] to a value of type [class] in the given [domain].
+///
+/// WARNING: The API and semantics of references are subject to change in a future release.
+/// The Pkl team is soliciting feedback from authors of libraries considering adopting references.
+/// For questions and feedback, please reach out via
+/// [GitHub Discussions](https://github.com/apple/pkl/discussions) or
+/// [create an issue](https://github.com/apple/pkl/issues/new).
 ///
 /// References may only be constructed for single, non-generic class types.
 /// To create a reference to other types (generic classes, union, nullable, constrained,
@@ -47,6 +59,12 @@ external const function Reference<D, T>(
 ///
 /// References are an advanced API design tool that enables library authors to express
 /// domain-specific references to values that may not be known during evaluation.
+///
+/// WARNING: The API and semantics of references are subject to change in a future release.
+/// The Pkl team is soliciting feedback from authors of libraries considering adopting references.
+/// For questions and feedback, please reach out via
+/// [GitHub Discussions](https://github.com/apple/pkl/discussions) or
+/// [create an issue](https://github.com/apple/pkl/issues/new).
 ///
 /// Instances are created with the [Reference()] constructor method.
 /// References consist of four parts:
