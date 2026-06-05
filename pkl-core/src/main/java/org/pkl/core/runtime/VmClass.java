@@ -441,6 +441,11 @@ public final class VmClass extends VmValue {
   }
 
   @Idempotent
+  public boolean isTypeClass() {
+    return isClass(BaseModule.getTypeClass(), "pkl.base#Type");
+  }
+
+  @Idempotent
   public boolean isVarArgsClass() {
     return isClass(BaseModule.getVarArgsClass(), "pkl.base#VarArgs");
   }

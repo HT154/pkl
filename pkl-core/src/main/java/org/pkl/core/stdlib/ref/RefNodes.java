@@ -19,6 +19,7 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import org.pkl.core.runtime.VmClass;
 import org.pkl.core.runtime.VmReference;
+import org.pkl.core.runtime.VmType;
 import org.pkl.core.runtime.VmTyped;
 import org.pkl.core.stdlib.ExternalMethod3Node;
 
@@ -28,6 +29,12 @@ public class RefNodes {
     protected VmReference eval(
         VirtualFrame frame, VmTyped self, VmTyped domain, VmClass clazz, Object data) {
       return new VmReference(domain, clazz, data);
+    }
+
+    @Specialization
+    protected VmReference eval(
+        VirtualFrame frame, VmTyped self, VmTyped domain, VmType type, Object data) {
+      return new VmReference(domain, type, data);
     }
   }
 }

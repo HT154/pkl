@@ -55,6 +55,7 @@ import org.pkl.parser.syntax.Expr.SuperSubscriptExpr;
 import org.pkl.parser.syntax.Expr.ThisExpr;
 import org.pkl.parser.syntax.Expr.ThrowExpr;
 import org.pkl.parser.syntax.Expr.TraceExpr;
+import org.pkl.parser.syntax.Expr.TypeOfExpr;
 import org.pkl.parser.syntax.Expr.UnaryMinusExpr;
 import org.pkl.parser.syntax.Expr.UnqualifiedAccessExpr;
 import org.pkl.parser.syntax.ExtendsOrAmendsClause;
@@ -927,6 +928,13 @@ final class ParserImpl {
             var exp = parseExpr(")");
             var end = expect(Token.RPAREN, "unexpectedToken", ")").span;
             yield new ReadExpr(exp, readType, start.endWith(end));
+          }
+          case TYPEOF -> {
+            var start = next().span;
+            expect(Token.LT, "unexpectedToken", "<");
+            var type = parseType(">");
+            var end = expect(Token.GT, "unexpectedToken", ">").span;
+            yield new TypeOfExpr(type, start.endWith(end));
           }
           case NEW -> {
             var start = next().span;

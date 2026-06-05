@@ -39,6 +39,7 @@ import com.oracle.truffle.api.dsl.TypeSystem;
   VmPair.class,
   VmRegex.class,
   VmTypeAlias.class,
+  VmType.class,
   VmObjectLike.class,
   VmReference.class,
   VmValue.class,

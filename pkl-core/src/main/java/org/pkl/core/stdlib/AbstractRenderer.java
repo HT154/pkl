@@ -36,6 +36,7 @@ import org.pkl.core.runtime.VmMapping;
 import org.pkl.core.runtime.VmNull;
 import org.pkl.core.runtime.VmReference;
 import org.pkl.core.runtime.VmSet;
+import org.pkl.core.runtime.VmType;
 import org.pkl.core.runtime.VmTypeAlias;
 import org.pkl.core.runtime.VmTyped;
 import org.pkl.core.runtime.VmUndefinedValueException;
@@ -421,6 +422,11 @@ public abstract class AbstractRenderer implements VmValueVisitor {
 
   @Override
   public void visitClass(VmClass value) {
+    cannotRenderTypeAddConverter(value);
+  }
+
+  @Override
+  public void visitType(VmType value) {
     cannotRenderTypeAddConverter(value);
   }
 

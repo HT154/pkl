@@ -289,6 +289,23 @@ public abstract sealed class Expr extends AbstractNode {
     NULL
   }
 
+  public static final class TypeOfExpr extends Expr {
+    public TypeOfExpr(Type type, Span span) {
+      super(span, List.of(type));
+    }
+
+    @Override
+    public <T> T accept(ParserVisitor<T> visitor) {
+      return visitor.visitTypeOfExpr(this);
+    }
+
+    public Type getType() {
+      var ret = (Type) children.get(0);
+      assert ret != null;
+      return ret;
+    }
+  }
+
   public static final class UnqualifiedAccessExpr extends Expr {
     public UnqualifiedAccessExpr(
         Identifier identifier, @Nullable ArgumentList argumentList, Span span) {

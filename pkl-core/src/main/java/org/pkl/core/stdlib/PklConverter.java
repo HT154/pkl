@@ -46,6 +46,7 @@ public final class PklConverter implements VmValueConverter<Object> {
   private final @Nullable VmFunction nullConverter;
   private final @Nullable VmFunction classConverter;
   private final @Nullable VmFunction typeAliasConverter;
+  private final @Nullable VmFunction typeConverter;
   private final @Nullable VmFunction referenceConverter;
 
   private PklConverter(
@@ -77,6 +78,7 @@ public final class PklConverter implements VmValueConverter<Object> {
     nullConverter = typeConverters.get(BaseModule.getNullClass());
     classConverter = typeConverters.get(BaseModule.getClassClass());
     typeAliasConverter = typeConverters.get(BaseModule.getTypeAliasClass());
+    typeConverter = typeConverters.get(BaseModule.getTypeClass());
     referenceConverter = typeConverters.get(RefModule.getReferenceClass());
   }
 
@@ -194,6 +196,11 @@ public final class PklConverter implements VmValueConverter<Object> {
   @Override
   public Object convertTypeAlias(VmTypeAlias value, Iterable<Object> path) {
     return doConvert(value, path, typeAliasConverter);
+  }
+
+  @Override
+  public Object convertType(VmType value, Iterable<Object> path) {
+    return doConvert(value, path, typeConverter);
   }
 
   @Override

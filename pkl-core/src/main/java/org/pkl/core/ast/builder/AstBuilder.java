@@ -142,6 +142,7 @@ import org.pkl.core.ast.expression.unary.ReadNodeGen;
 import org.pkl.core.ast.expression.unary.ReadOrNullNodeGen;
 import org.pkl.core.ast.expression.unary.ThrowNodeGen;
 import org.pkl.core.ast.expression.unary.TraceNode;
+import org.pkl.core.ast.expression.unary.TypeOfNode;
 import org.pkl.core.ast.expression.unary.UnaryMinusNodeGen;
 import org.pkl.core.ast.frame.GetEnclosingFrameNode;
 import org.pkl.core.ast.frame.ReadExactFrameSlotNodeGen;
@@ -237,6 +238,7 @@ import org.pkl.parser.syntax.Expr.ThrowExpr;
 import org.pkl.parser.syntax.Expr.TraceExpr;
 import org.pkl.parser.syntax.Expr.TypeCastExpr;
 import org.pkl.parser.syntax.Expr.TypeCheckExpr;
+import org.pkl.parser.syntax.Expr.TypeOfExpr;
 import org.pkl.parser.syntax.Expr.UnaryMinusExpr;
 import org.pkl.parser.syntax.Expr.UnqualifiedAccessExpr;
 import org.pkl.parser.syntax.ExtendsOrAmendsClause;
@@ -649,6 +651,11 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
       case GLOB ->
           ReadGlobNodeGen.create(createSourceSection(expr), moduleKey, visitExpr(expr.getExpr()));
     };
+  }
+
+  @Override
+  public TypeOfNode visitTypeOfExpr(TypeOfExpr expr) {
+    return new TypeOfNode(createSourceSection(expr), visitType(expr.getType()));
   }
 
   private ExpressionNode resolveReadVariable(UnqualifiedAccessExpr expr) {
