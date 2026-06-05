@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,7 @@ import org.pkl.parser.syntax.Expr.ThrowExpr;
 import org.pkl.parser.syntax.Expr.TraceExpr;
 import org.pkl.parser.syntax.Expr.TypeCastExpr;
 import org.pkl.parser.syntax.Expr.TypeCheckExpr;
+import org.pkl.parser.syntax.Expr.TypeOfExpr;
 import org.pkl.parser.syntax.Expr.UnaryMinusExpr;
 import org.pkl.parser.syntax.Expr.UnqualifiedAccessExpr;
 import org.pkl.parser.syntax.ExtendsOrAmendsClause;
@@ -117,6 +118,8 @@ public interface ParserVisitor<Result> {
   Result visitImportExpr(Expr.ImportExpr expr);
 
   Result visitReadExpr(ReadExpr expr);
+
+  Result visitTypeOfExpr(TypeOfExpr expr);
 
   Result visitUnqualifiedAccessExpr(UnqualifiedAccessExpr expr);
 

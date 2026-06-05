@@ -68,6 +68,7 @@ public final class PClassInfo<T> implements Serializable {
   public static final PClassInfo<PClass> Class = pklBaseClassInfo("Class", PClass.class);
   public static final PClassInfo<TypeAlias> TypeAlias =
       pklBaseClassInfo("TypeAlias", TypeAlias.class);
+  public static final PClassInfo<PType> Type = pklBaseClassInfo("Type", PType.class);
   public static final PClassInfo<Pattern> Regex = pklBaseClassInfo("Regex", Pattern.class);
   public static final PClassInfo<PObject> Deprecated =
       pklBaseClassInfo("Deprecated", PObject.class);

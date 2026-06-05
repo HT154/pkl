@@ -125,6 +125,8 @@ class TypeHolder {
   prop: Listing<String | Boolean | Number>
 }
 
+typeArgs2 = ref.Reference(d, typeof<Listing<String | Boolean | Number>>, null) as Ref<Listing<Number | Boolean | String>>
+
 output {
   renderer {
     converters {

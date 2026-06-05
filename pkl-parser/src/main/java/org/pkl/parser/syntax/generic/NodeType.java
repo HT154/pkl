@@ -100,6 +100,7 @@ public enum NodeType {
   TRACE_EXPR(NodeKind.EXPR),
   IMPORT_EXPR(NodeKind.EXPR),
   READ_EXPR(NodeKind.EXPR),
+  TYPEOF_EXPR(NodeKind.EXPR),
   NEW_EXPR(NodeKind.EXPR),
   NEW_HEADER,
   UNARY_MINUS_EXPR(NodeKind.EXPR),

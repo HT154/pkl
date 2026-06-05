@@ -77,6 +77,8 @@ public interface VmValueConverter<T> {
 
   T convertTypeAlias(VmTypeAlias value, Iterable<Object> path);
 
+  T convertType(VmType value, Iterable<Object> path);
+
   T convertNull(VmNull value, Iterable<Object> path);
 
   T convertPair(VmPair value, Iterable<Object> path);

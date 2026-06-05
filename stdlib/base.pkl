@@ -78,6 +78,9 @@ external class Class<out Type> extends Any {
 /// The runtime representation of a type alias.
 external class TypeAlias extends Any
 
+/// The runtime representation of a type.
+external class Type<out Type> extends Any
+
 /// Base class for modules.
 abstract external class Module {
   /// Returns the relative, descendent directory path between this module and [other].

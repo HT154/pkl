@@ -782,6 +782,17 @@ class GenericParserImpl {
             expect(Token.RPAREN, children, "unexpectedToken", ")");
             yield new Node(NodeType.READ_EXPR, children);
           }
+          case TYPEOF -> {
+            var children = new ArrayList<Node>();
+            children.add(makeTerminal(next()));
+            ff(children);
+            expect(Token.LT, children, "unexpectedToken", "<");
+            ff(children);
+            children.add(parseType(">"));
+            ff(children);
+            expect(Token.GT, children, "unexpectedToken", ">");
+            yield new Node(NodeType.TYPEOF_EXPR, children);
+          }
           case NEW -> {
             var children = new ArrayList<Node>();
             var header = new ArrayList<Node>();

@@ -52,6 +52,8 @@ public interface VmValueVisitor {
 
   void visitTypeAlias(VmTypeAlias value);
 
+  void visitType(VmType value);
+
   void visitPair(VmPair value);
 
   void visitRegex(VmRegex value);

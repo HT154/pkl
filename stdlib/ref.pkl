@@ -51,7 +51,7 @@ module pkl.ref
 /// ```
 external const function Reference<D, T>(
   domain: D(this is Domain),
-  `class`: Class<T>,
+  type: Class<T> | Type<T>,
   data: Any,
 ): Reference<D, T>
 

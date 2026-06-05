@@ -267,6 +267,13 @@ public final class VmValueRenderer {
     }
 
     @Override
+    public void visitType(VmType value) {
+      append("typeof<");
+      append(value.export());
+      append('>');
+    }
+
+    @Override
     public void visitNull(VmNull value) {
       append("null");
     }

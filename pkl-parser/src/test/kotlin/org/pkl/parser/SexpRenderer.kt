@@ -400,6 +400,7 @@ class SexpRenderer {
       is TraceExpr -> renderTraceExpr(expr)
       is ImportExpr -> renderImportExpr(expr)
       is ReadExpr -> renderReadExpr(expr)
+      is TypeOfExpr -> renderTypeOfExpr(expr)
       is UnqualifiedAccessExpr -> renderUnqualifiedAccessExpr(expr)
       is QualifiedAccessExpr -> renderQualifiedAccessExpr(expr)
       is SuperAccessExpr -> renderSuperAccessExpr(expr)
@@ -485,6 +486,16 @@ class SexpRenderer {
     val oldTab = increaseTab()
     buf.append('\n')
     renderExpr(expr.expr)
+    buf.append(')')
+    tab = oldTab
+  }
+
+  fun renderTypeOfExpr(expr: TypeOfExpr) {
+    buf.append(tab)
+    buf.append("(typeofExpr")
+    val oldTab = increaseTab()
+    buf.append('\n')
+    renderType(expr.type)
     buf.append(')')
     tab = oldTab
   }

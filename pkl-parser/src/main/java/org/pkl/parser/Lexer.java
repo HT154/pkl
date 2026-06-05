@@ -833,6 +833,7 @@ public final class Lexer {
       case "override" -> Token.OVERRIDE;
       case "protected" -> Token.PROTECTED;
       case "read" -> Token.READ;
+      case "typeof" -> Token.TYPEOF;
       case "record" -> Token.RECORD;
       case "super" -> Token.SUPER;
       case "switch" -> Token.SWITCH;

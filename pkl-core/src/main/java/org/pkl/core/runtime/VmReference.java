@@ -61,6 +61,15 @@ public final class VmReference extends VmValue {
         normalizeTypes(new PType.Class(clazz.export()), clazz.getModule().getVmClass().export()));
   }
 
+  @TruffleBoundary
+  public VmReference(VmTyped domain, VmType type, Object data) {
+    this(
+        domain,
+        data,
+        RrbTree.empty(),
+        normalizeTypes(type.export(), type.getModuleClass().export()));
+  }
+
   public VmReference(VmTyped domain, Object data, ImRrbt<VmTyped> path, PType referentType) {
     this.domain = domain;
     this.data = data;

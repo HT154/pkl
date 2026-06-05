@@ -50,6 +50,7 @@ import org.pkl.parser.syntax.Expr.ThrowExpr;
 import org.pkl.parser.syntax.Expr.TraceExpr;
 import org.pkl.parser.syntax.Expr.TypeCastExpr;
 import org.pkl.parser.syntax.Expr.TypeCheckExpr;
+import org.pkl.parser.syntax.Expr.TypeOfExpr;
 import org.pkl.parser.syntax.Expr.UnaryMinusExpr;
 import org.pkl.parser.syntax.Expr.UnqualifiedAccessExpr;
 import org.pkl.parser.syntax.ExtendsOrAmendsClause;
@@ -194,6 +195,11 @@ public abstract class BaseParserVisitor<T> implements ParserVisitor<T> {
 
   @Override
   public T visitReadExpr(ReadExpr expr) {
+    return visitChildren(expr);
+  }
+
+  @Override
+  public T visitTypeOfExpr(TypeOfExpr expr) {
     return visitChildren(expr);
   }
 

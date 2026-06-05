@@ -127,6 +127,10 @@ public final class BaseModule extends StdLibModule {
     return TypeAliasClass.instance;
   }
 
+  public static VmClass getTypeClass() {
+    return TypeClass.instance;
+  }
+
   public static VmClass getRegexClass() {
     return RegexClass.instance;
   }
@@ -333,6 +337,10 @@ public final class BaseModule extends StdLibModule {
 
   private static final class TypeAliasClass {
     static final VmClass instance = loadClass("TypeAlias");
+  }
+
+  private static final class TypeClass {
+    static final VmClass instance = loadClass("Type");
   }
 
   private static final class RegexClass {
