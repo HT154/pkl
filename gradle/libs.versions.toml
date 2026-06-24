@@ -11,7 +11,7 @@ geantyref = "2.0.1"
 #noinspection UnusedVersionCatalogEntry
 googleJavaFormat = "1.35.0"
 # 25.0.2 no longer supports macos-x64
-graalVm = "25.0.1"
+graalVm = "25.0.3"
 #noinspection UnusedVersionCatalogEntry
 graalVmJdkVersion = "25.0.1"
 # slightly hacky but convenient place so we remember to update the checksum
