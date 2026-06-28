@@ -39,7 +39,7 @@ jspecify = "1.0.0"
 junit = "6.1.0"
 # 1.7+ generates much more verbose code
 kotlinPoet = "1.6.0"
-kotlinStdLib = "2.2.21"
+kotlinStdLib = "2.4.0"
 #noinspection UnusedVersionCatalogEntry
 kotlinTarget = "2.2"
 kotlinToolchain = "2.3.21"
