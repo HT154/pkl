@@ -56,4 +56,6 @@ public interface PackageResolver extends Closeable {
 
   boolean hasElement(PackageAssetUri uri, @Nullable Checksums checksums)
       throws IOException, SecurityManagerException;
+
+  void writePackage(PackageUri packageUri, Path metadataFile, Path zipFile) throws IOException;
 }

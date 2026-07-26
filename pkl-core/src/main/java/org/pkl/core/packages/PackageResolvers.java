@@ -318,6 +318,11 @@ final class PackageResolvers {
     }
 
     @Override
+    public void writePackage(PackageUri packageUri, Path metadataFile, Path zipFile) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
     public byte[] getBytes(
         PackageAssetUri uri, boolean allowDirectories, @Nullable Checksums checksums)
         throws IOException, SecurityManagerException {
@@ -503,12 +508,16 @@ final class PackageResolvers {
       }
     }
 
+    private Path doGetMetadataPath(PackageUri packageUri) {
+      var metadataFileName = getLastSegmentName(packageUri) + ".json";
+      var metadataRelativePath = getRelativePath(packageUri).resolve(metadataFileName);
+      return cacheDir.resolve(metadataRelativePath);
+    }
+
     private Path getMetadataPath(
         PackageUri packageUri, URI requestUri, @Nullable Checksums checksums)
         throws IOException, SecurityManagerException {
-      var metadataFileName = getLastSegmentName(packageUri) + ".json";
-      var metadataRelativePath = getRelativePath(packageUri).resolve(metadataFileName);
-      var cachePath = cacheDir.resolve(metadataRelativePath);
+      var cachePath = doGetMetadataPath(packageUri);
       if (Files.exists(cachePath)) {
         return cachePath;
       }
@@ -556,11 +565,15 @@ final class PackageResolvers {
       return metadata;
     }
 
-    private Path getZipFilePath(PackageUri packageUri, DependencyMetadata dependencyMetadata)
-        throws IOException, SecurityManagerException {
+    private Path doGetZipFilePath(PackageUri packageUri) {
       var packageZipName = getLastSegmentName(packageUri) + ".zip";
       var relativePath = getRelativePath(packageUri).resolve(packageZipName);
-      var cachePath = cacheDir.resolve(relativePath);
+      return cacheDir.resolve(relativePath);
+    }
+
+    private Path getZipFilePath(PackageUri packageUri, DependencyMetadata dependencyMetadata)
+        throws IOException, SecurityManagerException {
+      var cachePath = doGetZipFilePath(packageUri);
       if (Files.exists(cachePath)) {
         return cachePath;
       }
@@ -683,6 +696,18 @@ final class PackageResolvers {
         }
         fileSystems.clear();
       }
+    }
+
+    @Override
+    public void writePackage(PackageUri packageUri, Path metadataFile, Path zipFile)
+        throws IOException {
+      var metadataCacheFile = doGetMetadataPath(packageUri);
+      Files.copy(metadataFile, metadataCacheFile);
+      Files.setPosixFilePermissions(metadataCacheFile, FILE_PERMISSIONS);
+
+      var zipCacheFile = doGetZipFilePath(packageUri);
+      Files.copy(zipFile, zipCacheFile);
+      Files.setPosixFilePermissions(zipCacheFile, FILE_PERMISSIONS);
     }
   }
 }

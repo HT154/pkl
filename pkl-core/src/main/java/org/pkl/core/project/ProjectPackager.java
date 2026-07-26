@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import org.graalvm.collections.EconomicMap;
+import org.jspecify.annotations.Nullable;
 import org.pkl.core.PklBugException;
 import org.pkl.core.PklException;
 import org.pkl.core.SecurityManager;
@@ -100,6 +101,7 @@ public final class ProjectPackager {
   private final boolean color;
   private final SecurityManager securityManager;
   private final PackageResolver packageResolver;
+  private final @Nullable PackageResolver packageWriteResolver;
   private final boolean skipPublishCheck;
   private final Writer outputWriter;
 
@@ -112,6 +114,8 @@ public final class ProjectPackager {
       SecurityManager securityManager,
       HttpClient httpClient,
       boolean skipPublishCheck,
+      boolean install,
+      @Nullable Path cacheDir,
       Writer outputWriter) {
     this.projects = projects;
     this.workingDir = workingDir;
@@ -121,6 +125,10 @@ public final class ProjectPackager {
     this.securityManager = securityManager;
     // intentionally use InMemoryPackageResolver
     this.packageResolver = PackageResolver.getInstance(securityManager, httpClient, null);
+    packageWriteResolver =
+        (install && cacheDir != null)
+            ? PackageResolver.getInstance(securityManager, httpClient, cacheDir)
+            : null;
     this.skipPublishCheck = skipPublishCheck;
     this.outputWriter = outputWriter;
   }
@@ -178,6 +186,12 @@ public final class ProjectPackager {
         new PackageResult(
             metadataFile, metadataChecksumFile, zipFile, zipChecksumFile, metadataFileChecksum);
     packageResults.put(pkg.uri(), result);
+    if (packageWriteResolver != null) {
+      try {
+        packageWriteResolver.writePackage(pkg.uri(), metadataFile, zipFile);
+      } catch (UnsupportedOperationException ignored) {
+      }
+    }
     return result;
   }
 

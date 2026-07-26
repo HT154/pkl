@@ -128,6 +128,14 @@ class PackageCommand : BaseCommand(name = "package", helpLink = helpLink) {
       .single()
       .flag()
 
+  private val install: Boolean by
+    option(
+        names = arrayOf("--install"),
+        help = "Install the built package into the local package cache",
+      )
+      .single()
+      .flag()
+
   override fun run() {
     CliProjectPackager(
         baseOptions.baseOptions(emptyList()),
@@ -135,6 +143,7 @@ class PackageCommand : BaseCommand(name = "package", helpLink = helpLink) {
         testOptions.cliTestOptions,
         outputPath,
         skipPublishCheck,
+        install,
       )
       .run()
   }
