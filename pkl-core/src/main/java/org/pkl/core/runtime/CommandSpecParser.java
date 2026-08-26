@@ -169,15 +169,12 @@ public final class CommandSpecParser {
       // the only possibility here is that it has a type annotation, otherwise this wouldn't parse
       throw PklBugException.unreachableCode();
     }
-    var optionsTypeNode = optionsPropertyTypeNode.getTypeNode();
-    if (optionsTypeNode instanceof TypeNode.TypedTypeNode) {
-      return BaseModule.getTypedClass();
-    }
-    if (!(optionsTypeNode instanceof TypeNode.ClassTypeNode node)) {
+    var optionsType = optionsPropertyTypeNode.getTypeNode().getType();
+    if (!(optionsType instanceof TypeNode.ClassTypeNode node)) {
       throw exceptionBuilder()
-          .withSourceSection(optionsTypeNode.getSourceSection())
+          .withSourceSection(optionsType.getSourceSection())
           .evalError(
-              "commandOptionsTypeNotClass", optionsTypeNode.getSourceSection().getCharacters())
+              "commandOptionsTypeNotClass", optionsType.getSourceSection().getCharacters())
           .build();
     }
     var clazz = node.getVmClass();
@@ -308,14 +305,14 @@ public final class CommandSpecParser {
 
     // assert type is Boolean
     var typeInfo = resolveType(prop);
-    if (!(typeInfo.getFirst() instanceof TypeNode.BooleanTypeNode)) {
+    if (typeInfo.getFirst().getClassRepr() != BaseModule.getBooleanClass()) {
       throw exceptionBuilder()
           .withSourceSection(prop.getHeaderSection())
           .evalError(
               "commandFlagInvalidType",
               prop.getName(),
               "BooleanFlag",
-              typeInfo.getFirst().getSourceSection().getCharacters(),
+              typeInfo.getFirst(),
               "Boolean")
           .build();
     }
@@ -342,7 +339,7 @@ public final class CommandSpecParser {
               "commandFlagInvalidType",
               prop.getName(),
               "CountedFlag",
-              typeInfo.getFirst().getSourceSection().getCharacters(),
+              typeInfo.getFirst(),
               "Int")
           .build();
     }
@@ -385,10 +382,10 @@ public final class CommandSpecParser {
   }
 
   /** Unwrap nullables, constraints, and aliases and return Pair(underlying type, is nullable) */
-  private Pair<TypeNode, Boolean> resolveType(ClassProperty prop) {
+  private Pair<VmType, Boolean> resolveType(ClassProperty prop) {
     var propertyTypeNode = prop.getTypeNode();
     if (propertyTypeNode != null) {
-      return resolveType(propertyTypeNode.getTypeNode());
+      return resolveType(propertyTypeNode.getTypeNode().getType());
     }
     throw exceptionBuilder()
         .withSourceSection(prop.getHeaderSection())
@@ -397,23 +394,23 @@ public final class CommandSpecParser {
   }
 
   /** Unwrap nullables, constraints, and aliases and return Pair(underlying type, is nullable) */
-  private Pair<TypeNode, Boolean> resolveType(TypeNode typeNode) {
+  private Pair<VmType, Boolean> resolveType(VmType type) {
     var isNullable = false;
     while (true) {
-      if (typeNode instanceof TypeNode.NullableTypeNode nullableTypeNode) {
+      if (type instanceof VmType.NullableType nullableType) {
         isNullable = true;
-        typeNode = nullableTypeNode.getElementTypeNode();
-      } else if (typeNode instanceof TypeNode.ConstrainedTypeNode constrainedTypeNode) {
-        typeNode = constrainedTypeNode.getChildTypeNode();
-      } else if (typeNode instanceof TypeNode.TypeAliasTypeNode typeAliasTypeNode) {
-        if (typeAliasTypeNode.getVmTypeAlias() == BaseModule.getCharTypeAlias()) break;
-        typeNode = typeAliasTypeNode.getAliasedTypeNode();
+        type = nullableType.getElementType();
+      } else if (type instanceof VmType.ConstrainedType constrainedType) {
+        type = constrainedType.getBaseType();
+      } else if (type instanceof VmType.AliasType aliasType) {
+        if (aliasType.getTypeAliasRepr() == BaseModule.getCharTypeAlias()) break;
+        type = aliasType.getAliasedType();
       } else {
         break;
       }
     }
 
-    return Pair.of(typeNode, isNullable);
+    return Pair.of(type, isNullable);
   }
 
   // This sigil used to indicate that an option has a default value that is a non-constant expr.

@@ -295,6 +295,13 @@ public final class VmValueRenderer {
       contexts.pop();
     }
 
+    @Override
+    public void visitType(VmType value) {
+      append("type<");
+      append(value);
+      append(">");
+    }
+
     private void append(Object value) {
       builder.append(value);
       checkLengthLimit();

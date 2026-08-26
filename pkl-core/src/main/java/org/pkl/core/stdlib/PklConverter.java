@@ -47,6 +47,7 @@ public final class PklConverter implements VmValueConverter<Object> {
   private final @Nullable VmFunction classConverter;
   private final @Nullable VmFunction typeAliasConverter;
   private final @Nullable VmFunction referenceConverter;
+  private final @Nullable VmFunction typeConverter;
 
   private PklConverter(
       VmMapping converters, VmMapping convertPropertyTransformers, Object rendererOrParser) {
@@ -78,6 +79,7 @@ public final class PklConverter implements VmValueConverter<Object> {
     classConverter = typeConverters.get(BaseModule.getClassClass());
     typeAliasConverter = typeConverters.get(BaseModule.getTypeAliasClass());
     referenceConverter = typeConverters.get(RefModule.getReferenceClass());
+    typeConverter = null; // TODO if we add in-language API for VmType
   }
 
   public static final PklConverter NOOP =
@@ -204,6 +206,11 @@ public final class PklConverter implements VmValueConverter<Object> {
   @Override
   public Object convertReference(VmReference value, Iterable<Object> path) {
     return doConvert(value, path, referenceConverter);
+  }
+
+  @Override
+  public Object convertType(VmType value, Iterable<Object> path) {
+    return doConvert(value, path, typeConverter);
   }
 
   @Override

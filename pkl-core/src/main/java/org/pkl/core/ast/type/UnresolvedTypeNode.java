@@ -53,7 +53,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new ConstrainedTypeNode(
@@ -67,7 +67,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new UnknownTypeNode(sourceSection);
@@ -80,7 +80,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new NothingTypeNode(sourceSection);
@@ -97,14 +97,14 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       var module = (VmTyped) getModuleNode.executeGeneric(frame);
       var moduleClass = module.getVmClass();
       return moduleClass.isClosed()
-          ? new FinalModuleTypeNode(sourceSection, moduleClass)
-          : new NonFinalModuleTypeNode(sourceSection, moduleClass);
+          ? FinalSelfTypeNode.moduleType(sourceSection, moduleClass)
+          : NonFinalSelfTypeNode.moduleType(sourceSection, moduleClass);
     }
   }
 
@@ -117,7 +117,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new StringLiteralTypeNode(sourceSection, literal);
@@ -133,7 +133,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       var type = resolveTypeNode.executeGeneric(frame);
@@ -178,13 +178,13 @@ public abstract class UnresolvedTypeNode extends PklNode {
             case "Int16":
               return new Int16TypeAliasTypeNode();
             case "UInt16":
-              return new UIntTypeAliasTypeNode(alias, 0x000000000000FFFFL);
+              return new IntMaskSlotTypeNode(alias, 0x000000000000FFFFL);
             case "Int32":
               return new Int32TypeAliasTypeNode();
             case "UInt32":
-              return new UIntTypeAliasTypeNode(alias, 0x00000000FFFFFFFFL);
+              return new IntMaskSlotTypeNode(alias, 0x00000000FFFFFFFFL);
             case "UInt":
-              return new UIntTypeAliasTypeNode(alias, 0x7FFFFFFFFFFFFFFFL);
+              return new IntMaskSlotTypeNode(alias, 0x7FFFFFFFFFFFFFFFL);
           }
         }
 
@@ -218,7 +218,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       var baseType = resolveTypeNode.executeGeneric(frame);
@@ -337,7 +337,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new NullableTypeNode(sourceSection, elementTypeNode.execute(frame));
@@ -357,7 +357,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
 
     @Override
     @ExplodeLoop
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       var elementTypeNodes = new TypeNode[unresolvedElementTypeNodes.length];
@@ -383,7 +383,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new UnionOfStringLiteralsTypeNode(sourceSection, defaultIndex, stringLiterals);
@@ -405,7 +405,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
 
     @Override
     @ExplodeLoop
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       var parameterTypeNodes = new TypeNode[this.parameterTypeNodes.length];
@@ -431,7 +431,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       CompilerDirectives.transferToInterpreter();
 
       return new TypeVariableNode(sourceSection, typeParameter);
@@ -452,7 +452,7 @@ public abstract class UnresolvedTypeNode extends PklNode {
     }
 
     @Override
-    public TypeNode execute(VirtualFrame frame) {
+    public TypeNode<?> execute(VirtualFrame frame) {
       return typeNode;
     }
   }

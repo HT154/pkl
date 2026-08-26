@@ -128,13 +128,13 @@ public abstract class VmListingOrMapping extends VmObject {
    * typeNode}. If {@code true}, type checks of individual values can be elided because
    * listings/mappings are covariant in their value type.
    */
-  public final boolean isValueTypeKnownSubtypeOf(TypeNode typeNode) {
+  public final boolean isValueTypeKnownSubtypeOf(TypeNode<?> typeNode) {
     if (typeNode.isNoopTypeCheck()) {
       return true;
     }
     if (typeCastNode == null) {
       return false;
     }
-    return typeCastNode.getTypeNode().isEquivalentTo(typeNode);
+    return typeCastNode.getTypeNode().getType().equals(typeNode.getType());
   }
 }
