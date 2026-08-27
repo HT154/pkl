@@ -94,7 +94,7 @@ public final class PClassInfo<T> implements Serializable {
 
   /** Returns the class info for the class with the given module and class name. */
   public static PClassInfo<?> get(String moduleName, String className, URI moduleUri) {
-    if (moduleName.equals("pkl.base")) {
+    if (moduleUri.equals(pklBaseUri)) {
       var classInfo = pooledPklBaseClassInfos.get(className);
       if (classInfo != null) return classInfo;
     }
@@ -148,7 +148,7 @@ public final class PClassInfo<T> implements Serializable {
 
   public String getDisplayName() {
     // display `String` rather than `pkl.base#String`, etc.
-    return moduleName.equals("pkl.base") ? className : isModuleClass() ? moduleName : qualifiedName;
+    return moduleUri.equals(pklBaseUri) ? className : isModuleClass() ? moduleName : qualifiedName;
   }
 
   public boolean isModuleClass() {

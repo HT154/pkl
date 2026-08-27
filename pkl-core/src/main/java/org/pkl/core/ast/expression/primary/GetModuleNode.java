@@ -44,4 +44,8 @@ public final class GetModuleNode extends ExpressionNode {
     return replace(levelsUp == 0 ? new GetReceiverNode() : new GetEnclosingReceiverNode(levelsUp))
         .executeGeneric(frame);
   }
+
+  public static GetModuleNode create(SourceSection sourceSection) {
+    return new GetModuleNode(sourceSection);
+  }
 }

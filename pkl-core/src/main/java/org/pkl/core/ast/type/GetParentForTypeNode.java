@@ -27,7 +27,8 @@ import org.pkl.core.util.LateInit;
 /** Resolves `<type>` to the type's default value in `new <type> { ... }`. */
 public final class GetParentForTypeNode extends ExpressionNode {
   @Child private UnresolvedTypeNode unresolvedTypeNode;
-  @Child private @Nullable TypeNode typeNode;
+  @Child private @Nullable TypeNode<?> typeNode;
+  @Child private GetDefaultValueForTypeNode getDefaultNode;
   private final String qualifiedName;
 
   @CompilationFinal @LateInit Object defaultValue;
@@ -39,7 +40,7 @@ public final class GetParentForTypeNode extends ExpressionNode {
     this.qualifiedName = qualifiedName;
   }
 
-  private TypeNode getTypeNode(VirtualFrame frame) {
+  private TypeNode<?> getTypeNode(VirtualFrame frame) {
     if (typeNode == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       typeNode = unresolvedTypeNode.execute(frame);
@@ -54,7 +55,8 @@ public final class GetParentForTypeNode extends ExpressionNode {
     if (defaultValue != null) return defaultValue;
     CompilerDirectives.transferToInterpreterAndInvalidate();
 
-    var typeNode = getTypeNode(frame);
+    var type = getTypeNode(frame).getType();
+    var defaultValue = getDefaultNode.executeGeneric(frame, type, sourceSection, qualifiedName);
     var defaultValue =
         typeNode.createDefaultValue(frame, VmLanguage.get(this), sourceSection, qualifiedName);
 
@@ -70,7 +72,7 @@ public final class GetParentForTypeNode extends ExpressionNode {
     }
 
     // try to produce a more specific error message than "cannotInstantiateType"
-    var clazz = typeNode.getVmClass();
+    var clazz = typeNode.getType().getClassRepr();
     if (clazz != null) VmUtils.checkIsInstantiable(clazz, typeNode);
 
     throw exceptionBuilder()

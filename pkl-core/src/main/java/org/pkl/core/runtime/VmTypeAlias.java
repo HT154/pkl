@@ -314,4 +314,13 @@ public final class VmTypeAlias extends VmValue {
   private static TypeNode deepCopy(TypeNode typeArgumentNode) {
     return (TypeNode) typeArgumentNode.deepCopy();
   }
+
+  private boolean isTypeAlias(@Nullable VmTypeAlias clazz, String qualifiedClassName) {
+    // may be null during evaluation of base module
+    return clazz != null ? this == clazz : getQualifiedName().equals(qualifiedClassName);
+  }
+
+  public boolean isMixinTypeAlias() {
+    return isTypeAlias(BaseModule.getMixinTypeAlias(), "pkl.base#Mixin");
+  }
 }

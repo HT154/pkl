@@ -27,14 +27,14 @@ import org.pkl.core.runtime.VmLanguage;
 public final class IdentityMixinNode extends PklRootNode {
   private final SourceSection sourceSection;
   private final String qualifiedName;
-  @Child private @Nullable TypeNode argumentTypeNode;
+  @Child private @Nullable TypeNode<?> argumentTypeNode;
 
   public IdentityMixinNode(
       VmLanguage language,
       FrameDescriptor descriptor,
       SourceSection sourceSection,
       String qualifiedName,
-      @Nullable TypeNode argumentTypeNode) {
+      @Nullable TypeNode<?> argumentTypeNode) {
     super(language, descriptor);
     this.qualifiedName = qualifiedName;
     this.sourceSection = sourceSection;

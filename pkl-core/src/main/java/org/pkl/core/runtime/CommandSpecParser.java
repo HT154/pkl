@@ -173,8 +173,7 @@ public final class CommandSpecParser {
     if (!(optionsType instanceof TypeNode.ClassTypeNode node)) {
       throw exceptionBuilder()
           .withSourceSection(optionsType.getSourceSection())
-          .evalError(
-              "commandOptionsTypeNotClass", optionsType.getSourceSection().getCharacters())
+          .evalError("commandOptionsTypeNotClass", optionsType.getSourceSection().getCharacters())
           .build();
     }
     var clazz = node.getVmClass();
@@ -336,11 +335,7 @@ public final class CommandSpecParser {
       throw exceptionBuilder()
           .withSourceSection(prop.getHeaderSection())
           .evalError(
-              "commandFlagInvalidType",
-              prop.getName(),
-              "CountedFlag",
-              typeInfo.getFirst(),
-              "Int")
+              "commandFlagInvalidType", prop.getName(), "CountedFlag", typeInfo.getFirst(), "Int")
           .build();
     }
 

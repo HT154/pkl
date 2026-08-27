@@ -61,7 +61,7 @@ public interface VmValueVisitor {
   void visitFunction(VmFunction value);
 
   void visitReference(VmReference value);
-  
+
   void visitType(VmType value);
 
   default void visit(Object value) {

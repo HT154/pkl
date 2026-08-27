@@ -248,7 +248,8 @@ public final class MirrorFactories {
         .addListProperty("parameterTypes", Pair::getFirst)
         .addTypedProperty("returnType", Pair::getSecond);
 
-    stringLiteralTypeFactory.addStringProperty("value", typeNode -> typeNode.getType().getLiteral());
+    stringLiteralTypeFactory.addStringProperty(
+        "value", typeNode -> typeNode.getType().getLiteral());
 
     stringLiteralTypeFactory2.addStringProperty("value", Property.identity());
 

@@ -18,10 +18,12 @@ package org.pkl.core.runtime;
 import com.oracle.truffle.api.CompilerDirectives;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
 import org.pkl.core.PType;
 import org.pkl.core.PklBugException;
 import org.pkl.core.TypeParameter;
+import org.pkl.core.ValueFormatter;
 import org.pkl.core.util.LateInit;
 import org.pkl.core.util.MutableBoolean;
 
@@ -119,6 +121,11 @@ public abstract class VmType extends VmValue {
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this);
     }
+
+    @Override
+    public String toString() {
+      return "unknown";
+    }
   }
 
   public static final class NothingType extends VmType {
@@ -138,17 +145,22 @@ public abstract class VmType extends VmValue {
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this);
     }
+
+    @Override
+    public String toString() {
+      return "nothing";
+    }
   }
 
-  public static abstract class SelfType extends VmType {
+  public abstract static class SelfType extends VmType {
     protected final VmClass clazz;
-    
+
     protected SelfType(VmClass clazz) {
       this.clazz = clazz;
     }
 
     @Override
-    public @Nullable VmClass getClassRepr() {
+    public VmClass getClassRepr() {
       return clazz;
     }
 
@@ -157,7 +169,7 @@ public abstract class VmType extends VmValue {
       return clazz.isClosed();
     }
   }
-  
+
   public static final class ModuleType extends SelfType {
     public ModuleType(VmClass clazz) {
       super(clazz);
@@ -177,13 +189,17 @@ public abstract class VmType extends VmValue {
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this);
     }
+
+    @Override
+    public String toString() {
+      return "module";
+    }
   }
 
   public static final class StringLiteralType extends VmType {
     private final String literal;
 
     public StringLiteralType(String literal) {
-      super();
       this.literal = literal;
     }
 
@@ -204,6 +220,11 @@ public abstract class VmType extends VmValue {
     @Override
     protected boolean doIsEquivalentTo(VmType other) {
       return other instanceof StringLiteralType t && literal.equals(t.literal);
+    }
+
+    @Override
+    public String toString() {
+      return ValueFormatter.basic().formatStringValue(literal, "");
     }
   }
 
@@ -241,6 +262,10 @@ public abstract class VmType extends VmValue {
       return typeArguments.length > 0;
     }
 
+    public VmType[] getTypeArguments() {
+      return typeArguments;
+    }
+
     @Override
     protected boolean doIsEquivalentTo(VmType other) {
       if (!(other instanceof ClassType t)) return false;
@@ -259,6 +284,20 @@ public abstract class VmType extends VmValue {
     @Override
     public PType export() {
       return new PType.Class(clazz.export(), exportTypes(typeArguments));
+    }
+
+    @Override
+    public String toString() {
+      var result = clazz.getDisplayName();
+      if (typeArguments.length > 0) {
+        result +=
+            "<"
+                + Arrays.stream(typeArguments)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "))
+                + ">";
+      }
+      return result;
     }
   }
 
@@ -287,12 +326,19 @@ public abstract class VmType extends VmValue {
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this) && elementType.acceptType(visitTypeArguments, consumer);
     }
+
+    @Override
+    public String toString() {
+      return elementType instanceof FunctionType || elementType instanceof UnionType
+          ? "(" + elementType + ")?"
+          : elementType + "?";
+    }
   }
 
   public static final class ConstrainedType extends VmType {
     private final VmType baseType;
     private final String[] constraints;
-    
+
     public ConstrainedType(VmType baseType, String[] constraints) {
       this.baseType = baseType;
       this.constraints = constraints;
@@ -320,6 +366,16 @@ public abstract class VmType extends VmValue {
       }
       return baseType.acceptType(visitTypeArguments, consumer);
     }
+
+    @Override
+    public String toString() {
+      return (baseType instanceof FunctionType || baseType instanceof UnionType
+              ? "(" + baseType + ")"
+              : baseType)
+          + "("
+          + String.join(", ", constraints)
+          + ")";
+    }
   }
 
   public static final class AliasType extends VmType {
@@ -327,7 +383,7 @@ public abstract class VmType extends VmValue {
     private final @Nullable VmClass clazz;
     private final VmType[] typeArguments;
     @LateInit private VmType aliasedType = null;
-    
+
     /** For intrinsified typealiases with no inherent class (e.g. NonNull) */
     public AliasType(VmTypeAlias typeAlias) {
       this.typeAlias = typeAlias;
@@ -391,6 +447,20 @@ public abstract class VmType extends VmValue {
     public boolean isParametric() {
       return typeArguments.length > 0;
     }
+
+    @Override
+    public String toString() {
+      var result = typeAlias.getDisplayName();
+      if (typeArguments.length > 0) {
+        result +=
+            "<"
+                + Arrays.stream(typeArguments)
+                    .map(Object::toString)
+                    .collect(Collectors.joining(", "))
+                + ">";
+      }
+      return result;
+    }
   }
 
   public static final class FunctionType extends VmType {
@@ -436,6 +506,14 @@ public abstract class VmType extends VmValue {
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this);
     }
+
+    @Override
+    public String toString() {
+      return "("
+          + Arrays.stream(parameterTypes).map(Object::toString).collect(Collectors.joining(", "))
+          + ") -> "
+          + returnType;
+    }
   }
 
   public static final class UnionType extends VmType {
@@ -478,11 +556,16 @@ public abstract class VmType extends VmValue {
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this) && acceptTypes(elementTypes, visitTypeArguments, consumer);
     }
+
+    @Override
+    public String toString() {
+      return Arrays.stream(elementTypes).map(Object::toString).collect(Collectors.joining(" | "));
+    }
   }
 
   public static final class TypeVariableType extends VmType {
     private final TypeParameter typeParameter;
-    
+
     public TypeVariableType(TypeParameter typeParameter) {
       this.typeParameter = typeParameter;
     }
@@ -504,6 +587,11 @@ public abstract class VmType extends VmValue {
     @Override
     public boolean acceptType(boolean visitTypeArguments, TypeConsumer consumer) {
       return consumer.accept(this);
+    }
+
+    @Override
+    public String toString() {
+      return typeParameter.getName();
     }
   }
 
