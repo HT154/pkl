@@ -15,43 +15,65 @@
  */
 package org.pkl.core.ast.expression.member;
 
+import com.oracle.truffle.api.dsl.Bind;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.ExpressionNode;
+import org.pkl.core.ast.member.Method;
+import org.pkl.core.ast.type.TypeNode;
 import org.pkl.core.runtime.*;
 
 /** Infers the parent to amend in `function createPerson(): Person = new { ... }`. */
-public final class InferParentWithinMethodNode extends AbstractInferParentNode {
+public abstract class InferParentWithinMethodNode extends AbstractInferParentFromMethodNode {
   private final Identifier methodName;
-  @Child private @Nullable ExpressionNode ownerNode;
+  @Child private ExpressionNode ownerNode;
 
-  public InferParentWithinMethodNode(
+  protected InferParentWithinMethodNode(
       SourceSection sourceSection,
       VmLanguage language,
       Identifier methodName,
       ExpressionNode ownerNode) {
 
-    super(sourceSection, language, true, true);
+    super(sourceSection, language);
     this.methodName = methodName;
     this.ownerNode = ownerNode;
   }
 
   @Override
-  protected TypeInfo getTypeInfo(VirtualFrame frame) {
-    assert ownerNode != null;
+  protected Method getMethod(VirtualFrame frame) {
     var owner = (VmObjectLike) ownerNode.executeGeneric(frame);
     assert owner.isPrototype();
 
     var method = owner.getVmClass().getDeclaredMethod(methodName);
     assert method != null;
-
-    return new TypeInfo(
-        method.getReturnTypeNode(), method.getHeaderSection(), method.getQualifiedName());
+    return method;
   }
 
   @Override
-  protected void onInfer() {
-    ownerNode = null;
+  protected @Nullable TypeNode getTypeNode(VirtualFrame frame, Method method) {
+    return method.getReturnTypeNode(frame);
+  }
+
+  // keep specializations in sync with other AbstractInferParentFromMethodNode subclasses
+
+  @Specialization(guards = {"method == cachedMethod", "isFinalType(cachedMethod, typeNode)"})
+  protected final Object evalCached(
+      @SuppressWarnings("unused") VirtualFrame frame,
+      @Bind("getMethod(frame)") Method method,
+      @Cached("getMethod(frame)") @SuppressWarnings("unused") Method cachedMethod,
+      @Cached("getTypeNode(frame, cachedMethod)") @SuppressWarnings("unused") TypeNode typeNode,
+      @Cached(
+              "getDefaultValue(frame, typeNode, cachedMethod.getHeaderSection(), cachedMethod.getQualifiedName())")
+          Object defaultValue) {
+    return defaultValue;
+  }
+
+  @Specialization(replaces = "evalCached")
+  protected final Object eval(VirtualFrame frame, @Bind("getMethod(frame)") Method method) {
+    var typeNode = getTypeNode(frame, method);
+    return getDefaultValue(frame, typeNode, method.getHeaderSection(), method.getQualifiedName());
   }
 }

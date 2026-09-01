@@ -109,9 +109,9 @@ import org.pkl.core.ast.expression.literal.MapLiteralNode;
 import org.pkl.core.ast.expression.literal.PropertiesLiteralNodeGen;
 import org.pkl.core.ast.expression.literal.SetLiteralNode;
 import org.pkl.core.ast.expression.literal.TrueLiteralNode;
-import org.pkl.core.ast.expression.member.InferParentWithinMethodArgumentNode;
-import org.pkl.core.ast.expression.member.InferParentWithinMethodNode;
-import org.pkl.core.ast.expression.member.InferParentWithinObjectMethodNode;
+import org.pkl.core.ast.expression.member.InferParentWithinMethodArgumentNodeGen;
+import org.pkl.core.ast.expression.member.InferParentWithinMethodNodeGen;
+import org.pkl.core.ast.expression.member.InferParentWithinObjectMethodNodeGen;
 import org.pkl.core.ast.expression.member.InferParentWithinPropertyNodeGen;
 import org.pkl.core.ast.expression.member.InvokeLexicalClassMethodNode;
 import org.pkl.core.ast.expression.member.InvokeLexicalObjectMethodNode;
@@ -170,7 +170,7 @@ import org.pkl.core.ast.member.UnresolvedFunctionNode;
 import org.pkl.core.ast.member.UnresolvedMethodNode;
 import org.pkl.core.ast.member.UnresolvedPropertyNode;
 import org.pkl.core.ast.member.UntypedObjectMemberNode;
-import org.pkl.core.ast.type.GetParentForTypeNode;
+import org.pkl.core.ast.type.GetParentForTypeNodeGen;
 import org.pkl.core.ast.type.ResolveDeclaredTypeNode;
 import org.pkl.core.ast.type.ResolveQualifiedDeclaredTypeNode;
 import org.pkl.core.ast.type.ResolveSimpleDeclaredTypeNode;
@@ -1038,7 +1038,7 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
     var expr =
         doVisitObjectBody(
             newExpr.getBody(),
-            new GetParentForTypeNode(
+            GetParentForTypeNodeGen.create(
                 createSourceSection(newExpr),
                 language,
                 parentType,
@@ -1084,9 +1084,9 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
       org.pkl.core.runtime.Identifier scopeName = scope.getName();
       inferredParentNode =
           isObjectMethod
-              ? new InferParentWithinObjectMethodNode(
+              ? InferParentWithinObjectMethodNodeGen.create(
                   createSourceSection(expr.newSpan()), language, scopeName, new GetOwnerNode())
-              : new InferParentWithinMethodNode(
+              : InferParentWithinMethodNodeGen.create(
                   createSourceSection(expr.newSpan()), language, scopeName, new GetOwnerNode());
     } else if (parent instanceof LetExpr letExpr && letExpr.getBindingExpr() == child) {
       // TODO correctly infer parent, e.g. `let (x: Person = new {}) ...`
@@ -1103,7 +1103,7 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
       var sourceSection = createSourceSection(expr.newSpan());
       var argIndex = argumentList.getArguments().indexOf(child);
       inferredParentNode =
-          new InferParentWithinMethodArgumentNode(sourceSection, language, argIndex);
+          InferParentWithinMethodArgumentNodeGen.create(sourceSection, language, argIndex);
     } else {
       throw exceptionBuilder()
           .evalError("cannotInferParent")

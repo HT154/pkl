@@ -181,7 +181,7 @@ public final class FunctionNode extends RegularMemberNode {
     assert argCount != paramCount;
 
     return exceptionBuilder()
-        .evalError("wrongFunctionArgumentCount", paramCount, argCount)
+        .evalError("wrongFunctionArgumentCount", paramCount, argCount, paramCount == 1 ? "" : "s")
         .withSourceSection(member.getHeaderSection())
         .build();
   }

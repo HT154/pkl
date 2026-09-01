@@ -106,6 +106,11 @@ public final class ClassMethod extends ClassMember implements Method {
   }
 
   @Override
+  public @Nullable TypeNode getReturnTypeNode(VirtualFrame frame) {
+    return functionNode.getReturnTypeNode();
+  }
+
+  @Override
   public String getCallSignature() {
     return functionNode.getCallSignature();
   }

@@ -16,7 +16,6 @@
 package org.pkl.core.ast.expression.member;
 
 import com.oracle.truffle.api.CompilerDirectives;
-import com.oracle.truffle.api.CompilerDirectives.CompilationFinal;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jspecify.annotations.Nullable;
@@ -29,79 +28,42 @@ import org.pkl.core.runtime.VmLanguage;
 import org.pkl.core.runtime.VmUtils;
 
 public abstract class AbstractInferParentNode extends ExpressionNode {
-  private final VmLanguage language;
-  private final boolean defaultToDynamic;
-  private final boolean cacheDefaultValue;
-  @CompilationFinal private @Nullable Object inferredParent;
 
-  public AbstractInferParentNode(
-      SourceSection sourceSection,
-      VmLanguage language,
-      boolean defaultToDynamic,
-      boolean cacheDefaultValue) {
+  protected final VmLanguage language;
+
+  public AbstractInferParentNode(SourceSection sourceSection, VmLanguage language) {
     super(sourceSection);
     this.language = language;
-    this.defaultToDynamic = defaultToDynamic;
-    this.cacheDefaultValue = cacheDefaultValue;
   }
 
-  public record TypeInfo(
-      @Nullable TypeNode typeNode, SourceSection headerSection, String qualifiedName) {}
-
-  protected abstract TypeInfo getTypeInfo(VirtualFrame frame);
-
-  protected void onInfer() {}
-
-  @Override
-  public final Object executeGeneric(VirtualFrame frame) {
-    if (cacheDefaultValue) {
-      if (inferredParent != null) return inferredParent;
-
-      // remaining code only runs first time this node is executed
-      // (assuming evaluation isn't continued despite errors)
-      // except when the parent type is a non-final self type (not cacheable)
-
-      CompilerDirectives.transferToInterpreterAndInvalidate();
-    } else {
-      CompilerDirectives.transferToInterpreter();
+  protected final Object getDefaultValue(
+      VirtualFrame frame,
+      @Nullable TypeNode typeNode,
+      SourceSection headerSection,
+      String qualifiedName) {
+    if (typeNode == null || typeNode instanceof UnknownTypeNode) {
+      return VmDynamic.empty();
     }
 
-    var typeInfo = getTypeInfo(frame);
-    var typeNode = typeInfo.typeNode();
-    if (typeNode == null || typeNode instanceof UnknownTypeNode) {
-      if (defaultToDynamic) {
-        var defaultValue = VmDynamic.empty();
-        if (cacheDefaultValue) {
-          inferredParent = defaultValue;
-          onInfer();
-        }
-        return defaultValue;
-      }
+    var defaultValue = typeNode.createDefaultValue(frame, language, headerSection, qualifiedName);
+    if (defaultValue != null) {
+      return defaultValue;
+    }
+
+    if (typeNode instanceof TypeVariableNode) {
+      CompilerDirectives.transferToInterpreter();
       throw exceptionBuilder().evalError("cannotInferParent").build();
     }
 
-    var defaultValue =
-        typeNode.createDefaultValue(
-            frame, language, typeInfo.headerSection(), typeInfo.qualifiedName());
-
-    if (defaultValue == null) {
-      if (typeNode instanceof TypeVariableNode)
-        throw exceptionBuilder().evalError("cannotInferParent").build();
-
-      // try to produce a more specific error message than "cannotInstantiateType"
-      var clazz = typeNode.getVmClass();
-      if (clazz != null) VmUtils.checkIsInstantiable(clazz, typeNode);
-
-      throw exceptionBuilder()
-          .evalError("cannotInstantiateType", typeNode.getSourceSection().getCharacters())
-          .build();
+    // try to produce a more specific error message than "cannotInstantiateType"
+    var clazz = typeNode.getVmClass();
+    if (clazz != null) {
+      VmUtils.checkIsInstantiable(clazz, typeNode);
     }
 
-    if (cacheDefaultValue && typeNode.isFinalType()) {
-      inferredParent = defaultValue;
-      onInfer();
-    }
-
-    return defaultValue;
+    CompilerDirectives.transferToInterpreter();
+    throw exceptionBuilder()
+        .evalError("cannotInstantiateType", typeNode.getSourceSection().getCharacters())
+        .build();
   }
 }

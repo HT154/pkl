@@ -16,6 +16,9 @@
 package org.pkl.core.ast.type;
 
 import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.dsl.Bind;
+import com.oracle.truffle.api.dsl.Cached;
+import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jspecify.annotations.Nullable;
@@ -23,30 +26,44 @@ import org.pkl.core.ast.expression.member.AbstractInferParentNode;
 import org.pkl.core.runtime.*;
 
 /** Resolves `<type>` to the type's default value in `new <type> { ... }`. */
-public final class GetParentForTypeNode extends AbstractInferParentNode {
+public abstract class GetParentForTypeNode extends AbstractInferParentNode {
   @Child private @Nullable UnresolvedTypeNode unresolvedTypeNode;
   @Child private @Nullable TypeNode typeNode;
-  private final String qualifiedName;
+  protected final String qualifiedName;
 
-  public GetParentForTypeNode(
+  protected GetParentForTypeNode(
       SourceSection sourceSection,
       VmLanguage language,
       UnresolvedTypeNode unresolvedTypeNode,
       String qualifiedName) {
-    super(sourceSection, language, false, true);
+    super(sourceSection, language);
     this.unresolvedTypeNode = unresolvedTypeNode;
     this.qualifiedName = qualifiedName;
   }
 
-  @Override
-  protected TypeInfo getTypeInfo(VirtualFrame frame) {
+  protected TypeNode getTypeNode(VirtualFrame frame) {
     if (typeNode == null) {
       assert unresolvedTypeNode != null;
       CompilerDirectives.transferToInterpreterAndInvalidate();
       typeNode = unresolvedTypeNode.execute(frame);
       adoptChildren();
     }
+    return typeNode;
+  }
 
-    return new TypeInfo(typeNode, sourceSection, qualifiedName);
+  @Specialization(guards = {"typeNode.isFinalType()"})
+  protected final Object evalCached(
+      @SuppressWarnings("unused") VirtualFrame frame,
+      @Bind("getTypeNode(frame)") @SuppressWarnings("unused") TypeNode typeNode,
+      @Cached(
+              value = "getDefaultValue(frame, typeNode, sourceSection, qualifiedName)",
+              neverDefault = true)
+          Object defaultValue) {
+    return defaultValue;
+  }
+
+  @Specialization(replaces = "evalCached")
+  protected final Object eval(VirtualFrame frame, @Bind("getTypeNode(frame)") TypeNode typeNode) {
+    return getDefaultValue(frame, typeNode, sourceSection, qualifiedName);
   }
 }

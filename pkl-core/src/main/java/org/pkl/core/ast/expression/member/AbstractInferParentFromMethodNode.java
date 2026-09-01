@@ -13,23 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.pkl.core.ast.member;
+package org.pkl.core.ast.expression.member;
 
-import com.oracle.truffle.api.CallTarget;
+import com.oracle.truffle.api.dsl.Idempotent;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jspecify.annotations.Nullable;
+import org.pkl.core.ast.member.Method;
+import org.pkl.core.ast.member.ObjectMethodNode;
 import org.pkl.core.ast.type.TypeNode;
-import org.pkl.core.runtime.VmObjectLike;
+import org.pkl.core.runtime.VmLanguage;
 
-public interface Method {
-  CallTarget getCallTarget(SourceSection callSite, VmObjectLike owner);
+public abstract class AbstractInferParentFromMethodNode extends AbstractInferParentNode {
 
-  @Nullable TypeNode getParameterTypeNode(VirtualFrame frame, int idx);
+  public AbstractInferParentFromMethodNode(SourceSection sourceSection, VmLanguage language) {
+    super(sourceSection, language);
+  }
 
-  @Nullable TypeNode getReturnTypeNode(VirtualFrame frame);
+  protected abstract Method getMethod(VirtualFrame frame);
 
-  SourceSection getHeaderSection();
+  protected abstract @Nullable TypeNode getTypeNode(VirtualFrame frame, Method method);
 
-  String getQualifiedName();
+  @Idempotent
+  protected boolean isFinalType(Method method, @Nullable TypeNode typeNode) {
+    return method instanceof ObjectMethodNode || (typeNode != null && typeNode.isFinalType());
+  }
 }

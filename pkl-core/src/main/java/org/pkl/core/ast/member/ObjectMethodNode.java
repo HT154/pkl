@@ -59,6 +59,11 @@ public final class ObjectMethodNode extends RegularMemberNode implements Method 
   }
 
   @Override
+  public @Nullable TypeNode getReturnTypeNode(VirtualFrame frame) {
+    return getFunctionNode(frame, true).getReturnTypeNode();
+  }
+
+  @Override
   public CallTarget getCallTarget(SourceSection callSite, VmObjectLike owner) {
     return (CallTarget) getCallTarget().call(owner, owner);
   }
