@@ -15,6 +15,6 @@ res14 = "Cannot render value of type `propertiesRenderer4#Person` as Properties.
 res15 = "Cannot render value of type `Pair` as Properties. Value: Pair(1, 2)"
 res16 = "Cannot render value of type `Class` as Properties. Value: propertiesRenderer4#Person"
 res17 = "Cannot render value of type `TypeAlias` as Properties. Value: propertiesRenderer4#Email"
-res18 = "Cannot render value of type `Function1` as Properties. Value: new Function1 {}"
+res18 = "Cannot render value of type `Function1` as Properties. Value: (unknown) -> unknown"
 res19 = "ouch"
 res20 = "Cannot render value of type `IntSeq` as Properties. Value: IntSeq(1, 4)"

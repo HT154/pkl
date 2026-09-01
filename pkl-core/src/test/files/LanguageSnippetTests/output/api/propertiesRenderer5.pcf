@@ -31,6 +31,6 @@ res14 = "The top-level value of a Java properties file must have type `Typed`, `
 res15 = "The top-level value of a Java properties file must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `DataSize`. Value: 1.mb"
 res16 = "The top-level value of a Java properties file must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `Class`. Value: propertiesRenderer5#Person"
 res17 = "The top-level value of a Java properties file must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `TypeAlias`. Value: propertiesRenderer5#Email"
-res18 = "The top-level value of a Java properties file must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `Function1`. Value: new Function1 {}"
+res18 = "The top-level value of a Java properties file must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `Function1`. Value: (unknown) -> unknown"
 res19 = "ouch"
 res20 = "The top-level value of a Java properties file must have type `Typed`, `Dynamic`, `Mapping`, or `Map`, but got type `IntSeq`. Value: IntSeq(1, 4)"

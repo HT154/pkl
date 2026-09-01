@@ -23,6 +23,6 @@ res14 = "The top-level value of a Pcf document must have type `Typed` or `Dynami
 res15 = "The top-level value of a Pcf document must have type `Typed` or `Dynamic`, but got type `Pair`. Value: Pair(1, 2)"
 res16 = "The top-level value of a Pcf document must have type `Typed` or `Dynamic`, but got type `Class`. Value: pcfRenderer5#Person"
 res17 = "The top-level value of a Pcf document must have type `Typed` or `Dynamic`, but got type `TypeAlias`. Value: pcfRenderer5#Email"
-res18 = "The top-level value of a Pcf document must have type `Typed` or `Dynamic`, but got type `Function1`. Value: new Function1 {}"
+res18 = "The top-level value of a Pcf document must have type `Typed` or `Dynamic`, but got type `Function1`. Value: (unknown) -> unknown"
 res19 = "ouch"
 res20 = "The top-level value of a Pcf document must have type `Typed` or `Dynamic`, but got type `IntSeq`. Value: IntSeq(1, 4)"

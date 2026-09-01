@@ -57,6 +57,6 @@ res14 = "Cannot render value of type `Duration` as XML property list. Value: 1.m
 res15 = "Cannot render value of type `DataSize` as XML property list. Value: 1.mb"
 res16 = "Cannot render value of type `Class` as XML property list. Value: pListRenderer4#Person"
 res17 = "Cannot render value of type `TypeAlias` as XML property list. Value: pListRenderer4#Email"
-res18 = "Cannot render value of type `Function1` as XML property list. Value: new Function1 {}"
+res18 = "Cannot render value of type `Function1` as XML property list. Value: (unknown) -> unknown"
 res19 = "ouch"
 res20 = "Cannot render value of type `IntSeq` as XML property list. Value: IntSeq(1, 4)"

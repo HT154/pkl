@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2025 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,9 +69,8 @@ public class ReadSuperEntryNode extends ExpressionNode {
     }
 
     // not found -> apply lambda contained in `default` property
-    var defaultFunction =
-        (VmFunction) VmUtils.readMemberOrNull(receiver, Identifier.DEFAULT, callNode);
+    var defaultFunction = VmUtils.readMemberOrNull(receiver, Identifier.DEFAULT, callNode);
     assert defaultFunction != null;
-    return applyLambdaNode.execute(defaultFunction, key);
+    return applyLambdaNode.execute((VmFunction) defaultFunction, key);
   }
 }

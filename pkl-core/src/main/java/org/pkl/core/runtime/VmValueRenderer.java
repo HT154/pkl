@@ -252,8 +252,7 @@ public final class VmValueRenderer {
 
     @Override
     public void visitFunction(VmFunction value) {
-      writeClassName(value);
-      append("{}");
+      append(value.getType());
     }
 
     @Override

@@ -59,4 +59,10 @@ aValuesJoined = """
   ${a.outputs.someList[9223372036854775807]}
   ${b.outputs.nonString}
   """
-typeArgs = "${null.prop}"
+typeArgs = "${null.a}"
+genericInheritance = "${null.b}"
+genericInheritance2 = "${null.c}"
+genericInheritance3 = "${null.d}"
+genericInheritance3a = "${null.e}"
+genericInheritance3b = "${null.d}"
+genericInheritance3c = "${null.e}"

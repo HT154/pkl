@@ -28,6 +28,7 @@ import org.pkl.core.ast.type.UnresolvedTypeNode;
 import org.pkl.core.runtime.VmClass;
 import org.pkl.core.runtime.VmFunction;
 import org.pkl.core.runtime.VmLanguage;
+import org.pkl.core.runtime.VmType;
 import org.pkl.core.runtime.VmUtils;
 
 // IDEA: don't materialize frames when all members are constants
@@ -61,12 +62,22 @@ public abstract class ObjectLiteralNode extends ExpressionNode {
 
   protected abstract ObjectLiteralNode copy(ExpressionNode newParentNode);
 
-  protected final AmendFunctionNode createAmendFunctionNode(VirtualFrame frame) {
-    var resolvedParameterTypes =
+  protected final AmendFunctionNode createAmendFunctionNode(VirtualFrame frame, VmFunction parent) {
+    var resolvedParameterTypeNodes =
         parametersDescriptor == null
             ? new TypeNode[0]
             : VmUtils.resolveParameterTypes(frame, parametersDescriptor, parameterTypes);
-    return new AmendFunctionNode(this, resolvedParameterTypes);
+    var resolvedType =
+        new VmType.FunctionType(
+            TypeNode.toTypes(resolvedParameterTypeNodes), parent.getType().getReturnType());
+    if (resolvedParameterTypeNodes.length > 0 && !resolvedType.isSubtypeOf(parent.getType())) {
+      CompilerDirectives.transferToInterpreter();
+      throw exceptionBuilder()
+          .evalError("wrongFunctionAmendmentParameterTypes", resolvedType, parent.getType())
+          .withSourceSection(getParentNode().getSourceSection())
+          .build();
+    }
+    return new AmendFunctionNode(this, resolvedParameterTypeNodes);
   }
 
   @Idempotent

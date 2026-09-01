@@ -66,7 +66,7 @@ examples {
   ["function type"] {
     42
     42
-    "Expected value of type `Function1`, but got type `Function2`. Value: new Function2 {}"
+    "Expected value of type `Function1`, but got type `(unknown, unknown) -> unknown`. Value: (unknown, unknown) -> unknown"
   }
   ["string literal type"] {
     "Pigeon"

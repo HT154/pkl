@@ -1545,7 +1545,13 @@ public abstract class TypeNode extends PklNode {
                 // because it is guaranteed to be never accessed.
                 VmUtils.createEmptyMaterializedFrame(),
                 null,
-                1,
+                new VmType.FunctionType(
+                    new VmType[] {
+                      keyTypeNode == null
+                          ? new VmType.ClassType(BaseModule.getIntClass())
+                          : keyTypeNode.getType()
+                    },
+                    valueTypeNode.getType()),
                 new SimpleRootNode(
                     language,
                     new FrameDescriptor(),
@@ -1681,7 +1687,7 @@ public abstract class TypeNode extends PklNode {
     @SuppressWarnings("unused")
     @Specialization(guards = "value.getVmClass() == getVmClass()")
     protected Object eval(VmFunction value) {
-      // do nothing
+      if (!value.getType().isSubtypeOf(getType())) throw typeMismatch(value, getType());
       return value;
     }
 
@@ -1716,7 +1722,8 @@ public abstract class TypeNode extends PklNode {
 
     @Specialization
     protected Object eval(VmFunction value) {
-      // do nothing
+      if (!value.getType().getReturnType().isSubtypeOf(typeArgumentNode.getType()))
+        throw typeMismatch(value, getType());
       return value;
     }
 
@@ -1758,7 +1765,7 @@ public abstract class TypeNode extends PklNode {
     @SuppressWarnings("unused")
     @Specialization(guards = "value.getVmClass() == getVmClass()")
     protected Object eval(VmFunction value) {
-      // do nothing
+      if (!value.getType().isSubtypeOf(getType())) throw typeMismatch(value, getType());
       return value;
     }
 
@@ -2272,7 +2279,10 @@ public abstract class TypeNode extends PklNode {
           // Assumption: don't need to set the correct `thisValue`
           // because it is guaranteed to be never accessed.
           null,
-          1,
+          typeArgumentNodes.length == 1
+              ? new VmType.FunctionType(
+                  new VmType[] {typeArgumentNodes[0].getType()}, typeArgumentNodes[0].getType())
+              : new VmType.FunctionType(new VmType[] {VmType.UNKNOWN}, VmType.UNKNOWN),
           new IdentityMixinNode(
               language,
               new FrameDescriptor(),

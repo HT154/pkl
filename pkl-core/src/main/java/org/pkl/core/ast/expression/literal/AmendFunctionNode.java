@@ -108,7 +108,7 @@ public final class AmendFunctionNode extends PklNode {
     return new VmFunction(
         frame.materialize(),
         isCustomThisScope ? frame.getAuxiliarySlot(customThisSlot) : VmUtils.getReceiver(frame),
-        functionToAmend.getParameterCount(),
+        functionToAmend.getType(),
         initialFunctionRootNode,
         new Context(functionToAmend, null),
         true,
@@ -144,7 +144,7 @@ public final class AmendFunctionNode extends PklNode {
       var currentFunction = (VmFunction) VmUtils.getOwner(frame);
       var context = (Context) currentFunction.getExtraStorage();
       if (nextFunctionRootNode != null) {
-        context = context.setFrame(frame.materialize());
+        context = context.withFrame(frame.materialize());
       }
       var functionToAmend = context.function;
 
@@ -167,27 +167,19 @@ public final class AmendFunctionNode extends PklNode {
       }
 
       return currentFunction.copy(
-          newFunctionToAmend.getParameterCount(),
+          newFunctionToAmend.getType(),
           nextFunctionRootNode,
-          context.setFunction(newFunctionToAmend));
+          context.withFunction(newFunctionToAmend));
     }
   }
 
   @ValueType
-  private static class Context {
-    public final VmFunction function;
-    public final @Nullable MaterializedFrame frame;
-
-    public Context(VmFunction function, @Nullable MaterializedFrame frame) {
-      this.function = function;
-      this.frame = frame;
-    }
-
-    public Context setFunction(VmFunction newFunction) {
+  private record Context(VmFunction function, @Nullable MaterializedFrame frame) {
+    public Context withFunction(VmFunction newFunction) {
       return new Context(newFunction, frame);
     }
 
-    public Context setFrame(MaterializedFrame newFrame) {
+    public Context withFrame(MaterializedFrame newFrame) {
       return new Context(function, newFrame);
     }
   }

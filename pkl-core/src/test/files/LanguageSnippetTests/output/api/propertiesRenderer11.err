@@ -1,6 +1,6 @@
 –– Pkl Error ––
 Cannot render value of type `Function1` as Properties.
-Value: new Function1 {}
+Value: (unknown) -> unknown
 
 x | m = new Mixin {}
     ^^^^^^^^^^^^^^^^

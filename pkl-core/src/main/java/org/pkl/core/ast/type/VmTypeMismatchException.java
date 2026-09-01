@@ -153,10 +153,14 @@ public abstract class VmTypeMismatchException extends ControlFlowException {
         }
       }
 
+      var renderedValueType =
+          actualValue instanceof VmFunction func
+              ? func.getType().toString()
+              : VmUtils.getClass(actualValue).toString();
+
       builder
           .append(
-              ErrorMessages.createIndented(
-                  "typeMismatch", indent, renderedType, VmUtils.getClass(actualValue)))
+              ErrorMessages.createIndented("typeMismatch", indent, renderedType, renderedValueType))
           .append("\n")
           .append(indent)
           .append("Value: ")

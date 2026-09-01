@@ -28,7 +28,7 @@ import org.pkl.core.util.EconomicMaps;
 public final class VmFunction extends VmObjectLike {
 
   private final Object thisValue;
-  private final int paramCount;
+  private final VmType.FunctionType type;
   private final PklRootNode rootNode;
   private final boolean hasObjectParams;
   private final boolean isFunctionAmend;
@@ -36,23 +36,23 @@ public final class VmFunction extends VmObjectLike {
   public VmFunction(
       MaterializedFrame enclosingFrame,
       Object thisValue,
-      int paramCount,
+      VmType.FunctionType type,
       PklRootNode rootNode,
       @Nullable Object extraStorage) {
-    this(enclosingFrame, thisValue, paramCount, rootNode, extraStorage, false, false);
+    this(enclosingFrame, thisValue, type, rootNode, extraStorage, false, false);
   }
 
   public VmFunction(
       MaterializedFrame enclosingFrame,
       Object thisValue,
-      int paramCount,
+      VmType.FunctionType type,
       PklRootNode rootNode,
       @Nullable Object extraStorage,
       boolean isFunctionAmend,
       boolean hasObjectParams) {
     super(enclosingFrame);
     this.thisValue = thisValue;
-    this.paramCount = paramCount;
+    this.type = type;
     this.rootNode = rootNode;
     this.hasObjectParams = hasObjectParams;
     this.extraStorage = extraStorage;
@@ -64,7 +64,11 @@ public final class VmFunction extends VmObjectLike {
   }
 
   public int getParameterCount() {
-    return paramCount;
+    return type.getParameterTypes().length;
+  }
+
+  public VmType.FunctionType getType() {
+    return type;
   }
 
   // if call site is a node, use ApplyVmFunction1Node.execute() or DirectCallNode.call() instead of
@@ -80,11 +84,13 @@ public final class VmFunction extends VmObjectLike {
   }
 
   public VmFunction copy(
-      int newParamCount, @Nullable PklRootNode newRootNode, @Nullable Object newExtraStorage) {
+      VmType.FunctionType newType,
+      @Nullable PklRootNode newRootNode,
+      @Nullable Object newExtraStorage) {
     return new VmFunction(
         enclosingFrame,
         thisValue,
-        newParamCount,
+        newType,
         newRootNode == null ? rootNode : newRootNode,
         newExtraStorage,
         isFunctionAmend,
@@ -161,7 +167,7 @@ public final class VmFunction extends VmObjectLike {
 
   @Override
   public VmClass getVmClass() {
-    return BaseModule.getFunctionNClass(paramCount);
+    return type.getVmClass();
   }
 
   @Override

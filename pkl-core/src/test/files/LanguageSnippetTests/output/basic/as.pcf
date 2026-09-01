@@ -40,7 +40,7 @@ examples {
     "Expected value of type `Null`, but got type `Mapping`. Value: new Mapping { [\"name\"] = \"Pigeon\"; [\"age\"] = 40 }"
     "Expected value of type `Null`, but got type `Class`. Value: as#Base"
     "Expected value of type `Null`, but got type `Listing`. Value: new Listing { null; null; \"Expected value of type `Null`, but got type `Strin..."
-    "Expected value of type `Null`, but got type `Function1`. Value: new Function1 {}"
+    "Expected value of type `Null`, but got type `(unknown) -> unknown`. Value: (unknown) -> unknown"
   }
   ["Number"] {
     42
@@ -60,7 +60,7 @@ examples {
     "Expected value of type `Int`, but got `null`."
     "Expected value of type `Int`, but got `null`."
     "Expected value of type `Int`, but got type `as#Base`. Value: new Base {}"
-    "Expected value of type `Int`, but got type `Function1`. Value: new Function1 {}"
+    "Expected value of type `Int`, but got type `(unknown) -> unknown`. Value: (unknown) -> unknown"
     "Expected value of type `Int`, but got type `as#Derived`. Value: new Derived {}"
     "Expected value of type `Int`, but got type `Mapping`. Value: new Mapping { [\"name\"] = \"Pigeon\"; [\"age\"] = 40 }"
     "Expected value of type `Int`, but got type `Class`. Value: as#Base"
@@ -88,7 +88,7 @@ examples {
     "Expected value of type `as#Other`, but got type `Mapping`. Value: new Mapping { [\"name\"] = \"Pigeon\"; [\"age\"] = 40 }"
     "Expected value of type `as#Other`, but got type `Class`. Value: as#Base"
     "Expected value of type `as#Other`, but got type `Listing`. Value: new Listing { \"Expected value of type `as#Other`, but got type `String`. Valu..."
-    "Expected value of type `as#Other`, but got type `Function1`. Value: new Function1 {}"
+    "Expected value of type `as#Other`, but got type `(unknown) -> unknown`. Value: (unknown) -> unknown"
   }
   ["Boolean"] {
     true
@@ -136,7 +136,7 @@ examples {
     42
     42
     42
-    "Expected value of type `Function2`, but got type `Function1`. Value: new Function1 {}"
+    "Expected value of type `Function2`, but got type `(unknown) -> unknown`. Value: (unknown) -> unknown"
   }
   ["Class"] {
     "Base"

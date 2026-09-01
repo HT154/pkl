@@ -24,6 +24,7 @@ import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.member.FunctionNode;
 import org.pkl.core.ast.member.UnresolvedFunctionNode;
 import org.pkl.core.runtime.VmFunction;
+import org.pkl.core.runtime.VmType;
 import org.pkl.core.runtime.VmUtils;
 
 public final class FunctionLiteralNode extends ExpressionNode {
@@ -35,7 +36,6 @@ public final class FunctionLiteralNode extends ExpressionNode {
 
   public FunctionLiteralNode(
       SourceSection sourceSection, UnresolvedFunctionNode functionNode, boolean isCustomThisScope) {
-
     super(sourceSection);
     this.unresolvedFunctionNode = functionNode;
     this.isCustomThisScope = isCustomThisScope;
@@ -54,7 +54,7 @@ public final class FunctionLiteralNode extends ExpressionNode {
     return new VmFunction(
         frame.materialize(),
         isCustomThisScope ? frame.getAuxiliarySlot(customThisSlot) : VmUtils.getReceiver(frame),
-        functionNode.getParameterCount(),
+        new VmType.FunctionType(functionNode.getParameterTypes(), functionNode.getReturnType()),
         functionNode,
         null);
   }

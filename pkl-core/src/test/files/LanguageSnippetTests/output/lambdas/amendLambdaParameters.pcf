@@ -15,3 +15,6 @@ example3 {
     prop2 = 2
   }
 }
+example4 {
+  result = "Expected a function with type `(String, Int) -> unknown`, but got type `(String, Number) -> unknown`."
+}
