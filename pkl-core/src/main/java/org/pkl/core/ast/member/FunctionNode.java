@@ -81,6 +81,14 @@ public final class FunctionNode extends RegularMemberNode {
     return paramCount;
   }
 
+  public VmType[] getParameterTypes() {
+    return TypeNode.toTypes(parameterTypeNodes);
+  }
+
+  public VmType getReturnType() {
+    return returnTypeNode == null ? VmType.UNKNOWN : returnTypeNode.getType();
+  }
+
   public @Nullable TypeNode getReturnTypeNode() {
     return returnTypeNode;
   }

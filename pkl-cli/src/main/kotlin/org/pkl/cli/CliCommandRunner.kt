@@ -265,6 +265,6 @@ constructor(
 fun CommandSpec.CompletionCandidates.toClikt(): CompletionCandidates =
   when (this) {
     CommandSpec.CompletionCandidates.PATH -> CompletionCandidates.Path
-    is CommandSpec.CompletionCandidates.Fixed -> CompletionCandidates.Fixed(values)
+    is CommandSpec.CompletionCandidates.Fixed -> CompletionCandidates.Fixed(values.toSet())
     else -> throw PklBugException.unreachableCode()
   }

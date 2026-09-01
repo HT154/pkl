@@ -23,7 +23,6 @@ import com.oracle.truffle.api.source.SourceSection;
 import java.util.*;
 import java.util.stream.Collectors;
 import org.jspecify.annotations.Nullable;
-import org.pkl.core.PType;
 import org.pkl.core.StackFrame;
 import org.pkl.core.ValueFormatter;
 import org.pkl.core.ast.type.TypeNode.UnionTypeNode;
@@ -95,6 +94,7 @@ public abstract class VmTypeMismatchException extends ControlFlowException {
 
       assert expectedType instanceof VmClass
           || expectedType instanceof VmTypeAlias
+          || expectedType instanceof VmType
           || expectedType instanceof String // string literal type
           || expectedType instanceof Set; // union of string literal types
 
@@ -180,10 +180,10 @@ public abstract class VmTypeMismatchException extends ControlFlowException {
       renderedExpected = "Class<" + expectedClass + ">";
     }
 
-    public ClassType(SourceSection sourceSection, VmClass actualClass, PType expectedType) {
+    public ClassType(SourceSection sourceSection, VmClass actualClass, VmType expectedType) {
       super(sourceSection, actualClass);
       this.expectedClass = null;
-      renderedExpected = "Class<" + expectedType + ">";
+      renderedExpected = expectedType.toString();
     }
 
     @Override
@@ -400,14 +400,14 @@ public abstract class VmTypeMismatchException extends ControlFlowException {
 
   public static final class Reference extends VmTypeMismatchException {
 
-    private final PType expectedDomainType;
-    private final PType expectedReferentType;
+    private final VmType expectedDomainType;
+    private final VmType expectedReferentType;
 
     public Reference(
         SourceSection sourceSection,
         VmReference actualValue,
-        PType expectedDomainType,
-        PType expectedReferentType) {
+        VmType expectedDomainType,
+        VmType expectedReferentType) {
       super(sourceSection, actualValue);
       this.expectedDomainType = expectedDomainType;
       this.expectedReferentType = expectedReferentType;
@@ -421,11 +421,15 @@ public abstract class VmTypeMismatchException extends ControlFlowException {
               ErrorMessages.createIndented(
                   "typeMismatch",
                   indent,
-                  new PType.Class(
-                      RefModule.getReferenceClass().export(),
-                      expectedDomainType,
-                      expectedReferentType),
-                  ((VmReference) actualValue).exportType()))
+                  new VmType.ClassType(
+                          RefModule.getReferenceClass(), expectedDomainType, expectedReferentType)
+                      .toString(),
+                  new VmType.ClassType(
+                          RefModule.getReferenceClass(),
+                          new VmType.ClassType(
+                              ((VmReference) actualValue).getDomain().getVmClass()),
+                          ((VmReference) actualValue).getReferentType())
+                      .toString()))
           .append("\n")
           .append(indent)
           .append("Value: ")

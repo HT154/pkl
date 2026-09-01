@@ -1271,7 +1271,7 @@ class CliCommandRunnerTest {
        __complete_files "${'$'}{word}"
       ;;
     "--explicit")
-      COMPREPLY=($(compgen -W 'bar baz foo' -- "${'$'}{word}"))
+      COMPREPLY=($(compgen -W 'foo bar baz' -- "${'$'}{word}"))
       ;;
     "--help")
       ;;
@@ -1282,7 +1282,7 @@ class CliCommandRunnerTest {
        __complete_files "${'$'}{word}"
       ;;
     "explicitArg")
-      COMPREPLY=($(compgen -W 'bar baz foo' -- "${'$'}{word}"))
+      COMPREPLY=($(compgen -W 'foo bar baz' -- "${'$'}{word}"))
       ;;"""
       )
   }

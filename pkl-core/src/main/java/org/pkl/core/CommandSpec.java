@@ -18,7 +18,6 @@ package org.pkl.core;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
@@ -102,16 +101,16 @@ public record CommandSpec(
     /** Shells should auto-complete file paths for this option. */
     public static final CompletionCandidates PATH = new StaticCompletionCandidates();
 
-    /** Shells should auto-complete a set of static values for this option. */
+    /** Shells should auto-complete a list of static values for this option. */
     public static final class Fixed extends CompletionCandidates {
-      private final Set<String> values;
+      private final List<String> values;
 
-      public Fixed(Set<String> values) {
+      public Fixed(List<String> values) {
         this.values = values;
       }
 
       /** Specific static values offered by shell auto-complete. */
-      public Set<String> getValues() {
+      public List<String> getValues() {
         return values;
       }
     }

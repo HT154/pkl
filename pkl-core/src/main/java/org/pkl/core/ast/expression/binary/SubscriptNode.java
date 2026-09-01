@@ -124,7 +124,13 @@ public abstract class SubscriptNode extends BinaryExpressionNode {
       CompilerDirectives.transferToInterpreter();
       throw exceptionBuilder()
           .evalError(
-              "operatorNotDefined2", getShortName(), reference.exportType(), VmUtils.getClass(key))
+              "operatorNotDefined2",
+              getShortName(),
+              new VmType.ClassType(
+                  RefModule.getReferenceClass(),
+                  new VmType.ClassType(reference.getDomain().getVmClass()),
+                  reference.getReferentType()),
+              VmUtils.getClass(key))
           .withProgramValue("Left operand", reference)
           .withProgramValue("Right operand", key)
           .withHint(getReferenceHint(reference, err, key))

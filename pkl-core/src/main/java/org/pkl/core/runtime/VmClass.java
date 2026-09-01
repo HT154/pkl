@@ -248,6 +248,10 @@ public final class VmClass extends VmValue {
     return typeParameters.size();
   }
 
+  public List<TypeParameter> getTypeParameters() {
+    return typeParameters;
+  }
+
   /**
    * Returns the property with the given name declared in this class, or {@code null} if no such
    * property was found. Does return local properties.
@@ -296,6 +300,13 @@ public final class VmClass extends VmValue {
     var module = prototype.getEnclosingOwner();
     assert module != null;
     return (VmTyped) module;
+  }
+
+  public VmClass getModuleClass() {
+    if (classInfo.isModuleClass()) return this;
+    var module = prototype.getEnclosingOwner();
+    assert module != null;
+    return module.getVmClass();
   }
 
   public VmTyped getModuleMirror() {
@@ -391,6 +402,11 @@ public final class VmClass extends VmValue {
 
   public @Nullable VmClass getSuperclass() {
     return superclass;
+  }
+
+  public @Nullable VmType getSupertype() {
+    if (supertypeNode == null) return null;
+    return supertypeNode.getType();
   }
 
   @Override
@@ -752,7 +768,7 @@ public final class VmClass extends VmValue {
     return getDisplayName();
   }
 
-  private UnmodifiableEconomicMap<Identifier, ClassProperty> getAllProperties() {
+  public UnmodifiableEconomicMap<Identifier, ClassProperty> getAllProperties() {
     synchronized (allPropertiesLock) {
       if (__allProperties == null) {
         // can't do this in ClassNode because it requires a fully initialized inheritance hierarchy
