@@ -21,7 +21,6 @@ import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
 import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.SimpleRootNode;
-import org.pkl.core.ast.builder.SymbolTable.CustomThisScope;
 import org.pkl.core.runtime.VmLanguage;
 import org.pkl.core.runtime.VmUtils;
 
@@ -54,7 +53,7 @@ public final class ExecuteCustomThisWithRootNode extends ExpressionNode {
       int[] parameterSlots) {
     super(sourceSection);
     this.expressionNode = expressionNode;
-    frameDescriptor.findOrAddAuxiliarySlot(CustomThisScope.FRAME_SLOT_ID);
+    frameDescriptor.findOrAddAuxiliarySlot(VmUtils.CUSTOM_THIS_FRAME_SLOT_ID);
     var rootNode =
         new SimpleRootNode(
             VmLanguage.get(this),

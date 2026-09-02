@@ -1,5 +1,5 @@
 /*
- * Copyright © 2024-2026 Apple Inc. and the Pkl project authors. All rights reserved.
+ * Copyright © 2026 Apple Inc. and the Pkl project authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,52 +15,54 @@
  */
 package org.pkl.core.ast.expression.member;
 
+import com.oracle.truffle.api.CompilerDirectives;
+import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.source.SourceSection;
 import org.jspecify.annotations.Nullable;
-import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.member.Method;
-import org.pkl.core.ast.member.ObjectMethodNode;
 import org.pkl.core.ast.type.TypeNode;
-import org.pkl.core.runtime.Identifier;
 import org.pkl.core.runtime.VmLanguage;
-import org.pkl.core.runtime.VmObjectLike;
+import org.pkl.core.runtime.VmUtils;
 
-/** Infers the parent to amend in `obj { local function createPerson(): Person = new { ... } }`. */
-public abstract class InferParentWithinObjectMethodNode extends AbstractInferParentFromMethodNode {
-  private final Identifier localMethodName;
-  @Child private ExpressionNode ownerNode;
+public abstract class InferParentWithinMethodArgumentNode
+    extends AbstractInferParentFromMethodNode {
+  private final int argIndex;
 
-  protected InferParentWithinObjectMethodNode(
-      SourceSection sourceSection,
-      VmLanguage language,
-      Identifier localMethodName,
-      ExpressionNode ownerNode) {
-
+  public InferParentWithinMethodArgumentNode(
+      SourceSection sourceSection, VmLanguage language, int argIndex) {
     super(sourceSection, language);
-    this.localMethodName = localMethodName;
-    this.ownerNode = ownerNode;
+    this.argIndex = argIndex;
+  }
 
-    assert localMethodName.isLocalMethod();
+  @TruffleBoundary
+  private int getMethodSlot(FrameDescriptor frameDescriptor) {
+    var methodSlot = frameDescriptor.getAuxiliarySlots().get(VmUtils.METHOD_FRAME_SLOT_ID);
+    if (methodSlot == null) {
+      // used in intrinsic constructor e.g. pkl.base#List()
+      throw exceptionBuilder().evalError("cannotInferParent").build();
+    }
+    return methodSlot;
   }
 
   @Override
   protected Method getMethod(VirtualFrame frame) {
-    var owner = (VmObjectLike) ownerNode.executeGeneric(frame);
+    var method = (Method) frame.getAuxiliarySlot(getMethodSlot(frame.getFrameDescriptor()));
+    if (method == null) {
+      // used in FunctionN.apply()
+      CompilerDirectives.transferToInterpreter();
+      throw exceptionBuilder().evalError("cannotInferParent").build();
+    }
 
-    var member = owner.getMember(localMethodName);
-    assert member != null;
-
-    var methodNode = (ObjectMethodNode) member.getMemberNode();
-    assert methodNode != null;
-    return methodNode;
+    return method;
   }
 
   @Override
   protected @Nullable TypeNode getTypeNode(VirtualFrame frame, Method method) {
-    return method.getReturnTypeNode(frame);
+    return method.getParameterTypeNode(frame, argIndex);
   }
 
   // keep specializations in sync with other AbstractInferParentFromMethodNode subclasses
