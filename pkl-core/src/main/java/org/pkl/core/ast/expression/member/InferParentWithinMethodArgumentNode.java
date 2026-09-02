@@ -17,7 +17,6 @@ package org.pkl.core.ast.expression.member;
 
 import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
-import com.oracle.truffle.api.dsl.Bind;
 import com.oracle.truffle.api.dsl.Cached;
 import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.FrameDescriptor;
@@ -68,10 +67,10 @@ public abstract class InferParentWithinMethodArgumentNode
 
   // keep specializations in sync with other AbstractInferParentFromMethodNode subclasses
 
-  @Specialization(guards = {"method == cachedMethod", "isFinalType(cachedMethod, typeNode)"})
+  @Specialization(
+      guards = {"getMethod(frame) == cachedMethod", "isFinalType(cachedMethod, typeNode)"})
   protected final Object evalCached(
       @SuppressWarnings("unused") VirtualFrame frame,
-      @Bind("getMethod(frame)") Method method,
       @Cached("getMethod(frame)") @SuppressWarnings("unused") Method cachedMethod,
       @Cached("getTypeNode(frame, cachedMethod)") @SuppressWarnings("unused") TypeNode typeNode,
       @Cached(
@@ -81,7 +80,8 @@ public abstract class InferParentWithinMethodArgumentNode
   }
 
   @Specialization(replaces = "evalCached")
-  protected final Object eval(VirtualFrame frame, @Bind("getMethod(frame)") Method method) {
+  protected final Object eval(VirtualFrame frame) {
+    var method = getMethod(frame);
     var typeNode = getTypeNode(frame, method);
     return getDefaultValue(frame, typeNode, method.getHeaderSection(), method.getQualifiedName());
   }

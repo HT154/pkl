@@ -50,8 +50,9 @@ public abstract class AbstractInferParentNode extends ExpressionNode {
       return defaultValue;
     }
 
+    CompilerDirectives.transferToInterpreter();
+
     if (typeNode instanceof TypeVariableNode) {
-      CompilerDirectives.transferToInterpreter();
       throw exceptionBuilder().evalError("cannotInferParent").build();
     }
 
@@ -61,7 +62,6 @@ public abstract class AbstractInferParentNode extends ExpressionNode {
       VmUtils.checkIsInstantiable(clazz, typeNode);
     }
 
-    CompilerDirectives.transferToInterpreter();
     throw exceptionBuilder()
         .evalError("cannotInstantiateType", typeNode.getSourceSection().getCharacters())
         .build();
