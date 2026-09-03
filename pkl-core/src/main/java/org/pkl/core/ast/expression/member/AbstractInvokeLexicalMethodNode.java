@@ -31,8 +31,9 @@ public abstract sealed class AbstractInvokeLexicalMethodNode
       Identifier methodName,
       int levelsUp,
       ExpressionNode[] argumentNodes,
-      boolean needsConst) {
-    super(sourceSection, methodName, argumentNodes, needsConst);
+      boolean needsConst,
+      boolean argsRequireInference) {
+    super(sourceSection, methodName, argumentNodes, needsConst, argsRequireInference);
     this.levelsUp = levelsUp;
   }
 

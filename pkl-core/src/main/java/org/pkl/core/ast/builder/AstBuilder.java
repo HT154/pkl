@@ -878,7 +878,7 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
     if (resolution instanceof LexicalMethod method) {
       var levelsUp = method.levelsUp();
       var identifier = org.pkl.core.runtime.Identifier.method(name, method.isLocal());
-      var args = visitArgumentList(argList);
+      var argInfo = visitArgumentList(argList);
       var needsConst =
           switch (constLevel) {
             case NONE -> false;
@@ -891,35 +891,57 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
         var getModuleNode = new GetTypeAliasModuleNode(sourceSection);
         if (method.isObjectMethod()) {
           return new InvokeQualifiedObjectMethodNode(
-              sourceSection, identifier, args, needsConst, getModuleNode);
+              sourceSection,
+              identifier,
+              argInfo.getFirst(),
+              needsConst,
+              getModuleNode,
+              argInfo.getSecond());
         }
         if (method.isOnClosedClass() || method.isLocal() || method.isExternal()) {
           return new InvokeQualifiedClassMethodNode(
-              sourceSection, identifier, args, needsConst, getModuleNode);
+              sourceSection,
+              identifier,
+              argInfo.getFirst(),
+              needsConst,
+              getModuleNode,
+              argInfo.getSecond());
         }
         return InvokeMethodVirtualNodeGen.create(
             sourceSection,
             identifier,
-            args,
+            argInfo.getFirst(),
             MemberLookupMode.IMPLICIT_LEXICAL,
             needsConst,
+            argInfo.getSecond(),
             getModuleNode,
             GetClassNodeGen.create(null));
       }
       if (method.isObjectMethod()) {
         return new InvokeLexicalObjectMethodNode(
-            sourceSection, identifier, levelsUp, args, needsConst);
+            sourceSection,
+            identifier,
+            levelsUp,
+            argInfo.getFirst(),
+            needsConst,
+            argInfo.getSecond());
       }
       if (method.isOnClosedClass() || method.isLocal() || method.isExternal()) {
         return new InvokeLexicalClassMethodNode(
-            sourceSection, identifier, levelsUp, args, needsConst);
+            sourceSection,
+            identifier,
+            levelsUp,
+            argInfo.getFirst(),
+            needsConst,
+            argInfo.getSecond());
       }
       return InvokeMethodVirtualNodeGen.create(
           sourceSection,
           identifier,
-          args,
+          argInfo.getFirst(),
           MemberLookupMode.IMPLICIT_LEXICAL,
           needsConst,
+          argInfo.getSecond(),
           levelsUp == 0 ? new GetReceiverNode() : new GetEnclosingReceiverNode(levelsUp),
           GetClassNodeGen.create(null));
     } else if (resolution instanceof ImplicitBaseMethod) {
@@ -941,21 +963,25 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
         var baseModule = BaseModule.getModule();
         var method = baseModule.getVmClass().getDeclaredMethod(identifier);
         assert method != null;
+        var argInfo = visitArgumentList(argList);
         return new InvokeMethodDirectNode(
             createSourceSection(expr),
             method,
             new ConstantValueNode(baseModule),
-            visitArgumentList(argList));
+            argInfo.getFirst(),
+            argInfo.getSecond());
       }
     } else if (resolution instanceof ImplicitThisMethod) {
       var isCustomThis = scope.isCustomThisScope();
       var needsConst = constLevel == ConstLevel.ALL && constDepth == -1 && !isCustomThis;
+      var argInfo = visitArgumentList(argList);
       return InvokeMethodVirtualNodeGen.create(
           sourceSection,
           org.pkl.core.runtime.Identifier.get(name),
-          visitArgumentList(argList),
+          argInfo.getFirst(),
           MemberLookupMode.IMPLICIT_THIS,
           needsConst,
+          argInfo.getSecond(),
           VmUtils.createThisNode(VmUtils.unavailableSourceSection(), isCustomThis),
           GetClassNodeGen.create(null));
     } else {
@@ -1053,7 +1079,9 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
     var parent = expr.parent();
     var scope = symbolTable.getCurrentScope();
 
-    while (parent instanceof IfExpr
+    // keep in sync with isImplicitNewExpr
+    while (parent instanceof IfExpr ifExpr
+            && (ifExpr.getThen() == child || ifExpr.getEls() == child)
         || parent instanceof TraceExpr
         || parent instanceof LetExpr letExpr && letExpr.getExpr() == child) {
 
@@ -1135,8 +1163,9 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
             .build();
       }
 
+      var argInfo = visitArgumentList(argCtx);
       return InvokeSuperMethodNodeGen.create(
-          sourceSection, memberName, visitArgumentList(argCtx), needsConst);
+          sourceSection, memberName, argInfo.getFirst(), needsConst, argInfo.getSecond());
     }
 
     // superproperty call
@@ -1150,11 +1179,10 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
 
   @Override
   public ExpressionNode visitQualifiedAccessExpr(QualifiedAccessExpr expr) {
-    if (expr.getArgumentList() != null) {
-      return doVisitMethodAccessExpr(expr);
-    }
-
-    return doVisitPropertyInvocationExpr(expr);
+    var argList = expr.getArgumentList();
+    return argList != null
+        ? doVisitMethodAccessExpr(expr, argList)
+        : doVisitPropertyInvocationExpr(expr);
   }
 
   @Override
@@ -2306,13 +2334,32 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
   }
 
   @Override
-  public ExpressionNode[] visitArgumentList(ArgumentList argumentList) {
+  public Pair<ExpressionNode[], Boolean> visitArgumentList(ArgumentList argumentList) {
     var args = argumentList.getArguments();
     var res = new ExpressionNode[args.size()];
+    var argsRequireInference = false;
     for (int i = 0; i < res.length; i++) {
-      res[i] = visitExpr(args.get(i));
+      var expr = args.get(i);
+      res[i] = visitExpr(expr);
+      argsRequireInference = argsRequireInference || isImplicitNewExpr(expr);
     }
-    return res;
+    return Pair.of(res, argsRequireInference);
+  }
+
+  private static boolean isImplicitNewExpr(Expr expr) {
+    // keep in sync with doVisitNewExprWithInferredParent
+    if (expr instanceof NewExpr newExpr && newExpr.getType() == null) {
+      return true;
+    } else if (expr instanceof IfExpr ifExpr) {
+      return isImplicitNewExpr(ifExpr.getThen()) || isImplicitNewExpr(ifExpr.getEls());
+    } else if (expr instanceof TraceExpr traceExpr) {
+      return isImplicitNewExpr(traceExpr.getExpr());
+    } else if (expr instanceof ParenthesizedExpr parenthesizedExpr) {
+      return isImplicitNewExpr(parenthesizedExpr.getExpr());
+    } else if (expr instanceof LetExpr letExpr) {
+      return isImplicitNewExpr(letExpr.getExpr());
+    }
+    return false;
   }
 
   @Override
@@ -2888,12 +2935,12 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
     return ReadPropertyNodeGen.create(sourceSection, propertyName, needsConst, receiver);
   }
 
-  private ExpressionNode doVisitMethodAccessExpr(QualifiedAccessExpr expr) {
+  private ExpressionNode doVisitMethodAccessExpr(QualifiedAccessExpr expr, ArgumentList argList) {
     var sourceSection = createSourceSection(expr);
     var functionName = toIdentifier(expr.getIdentifier().getValue());
-    var argCtx = expr.getArgumentList();
     var receiver = visitExpr(expr.getExpr());
     var needsConst = needsConst(receiver);
+    var argInfo = visitArgumentList(argList);
 
     if (expr.isNullable()) {
       //noinspection ConstantConditions
@@ -2902,9 +2949,10 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
           InvokeMethodVirtualNodeGen.create(
               sourceSection,
               functionName,
-              visitArgumentList(argCtx),
+              argInfo.getFirst(),
               MemberLookupMode.EXPLICIT_RECEIVER,
               needsConst,
+              argInfo.getSecond(),
               PropagateNullReceiverNodeGen.create(unavailableSourceSection(), receiver),
               GetClassNodeGen.create(null)));
     }
@@ -2913,9 +2961,10 @@ public class AstBuilder extends AbstractAstBuilder<Object> {
     return InvokeMethodVirtualNodeGen.create(
         sourceSection,
         functionName,
-        visitArgumentList(argCtx),
+        argInfo.getFirst(),
         MemberLookupMode.EXPLICIT_RECEIVER,
         needsConst,
+        argInfo.getSecond(),
         receiver,
         GetClassNodeGen.create(null));
   }

@@ -31,8 +31,9 @@ public final class InvokeLexicalClassMethodNode extends AbstractInvokeLexicalMet
       Identifier methodName,
       int levelsUp,
       ExpressionNode[] argumentNodes,
-      boolean needsConst) {
-    super(sourceSection, methodName, levelsUp, argumentNodes, needsConst);
+      boolean needsConst,
+      boolean argsRequireInference) {
+    super(sourceSection, methodName, levelsUp, argumentNodes, needsConst, argsRequireInference);
   }
 
   @Override

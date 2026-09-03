@@ -1,6 +1,9 @@
 qualified = 1
-unqualifiedLexical = 1
-unqualifiedThis = 8
+unqualifiedLexical {
+  call = 1
+}
+unqualifiedThis1 = 1
+unqualifiedThis2 = 8
 `super` = 16
 nestedMethodCalls = 26
 objectMethod {
