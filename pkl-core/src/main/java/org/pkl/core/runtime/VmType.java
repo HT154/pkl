@@ -29,7 +29,6 @@ import org.pkl.core.PType.Constrained;
 import org.pkl.core.PType.StringLiteral;
 import org.pkl.core.PType.TypeVariable;
 import org.pkl.core.PType.Union;
-import org.pkl.core.TypeParameter;
 import org.pkl.core.ValueFormatter;
 
 public abstract class VmType {
@@ -744,13 +743,13 @@ public abstract class VmType {
   }
 
   public static final class TypeVariableType extends VmType {
-    private final TypeParameter typeParameter;
+    private final VmTypeParameter typeParameter;
 
-    public TypeVariableType(TypeParameter typeParameter) {
+    public TypeVariableType(VmTypeParameter typeParameter) {
       this.typeParameter = typeParameter;
     }
 
-    public TypeParameter getTypeParameter() {
+    public VmTypeParameter getTypeParameter() {
       return typeParameter;
     }
 
@@ -766,7 +765,7 @@ public abstract class VmType {
 
     @Override
     public PType export() {
-      return new TypeVariable(typeParameter);
+      return new TypeVariable(typeParameter.export());
     }
 
     @Override
