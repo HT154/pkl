@@ -23,6 +23,7 @@ import com.oracle.truffle.api.source.SourceSection;
 import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.member.Method;
+import org.pkl.core.ast.type.UnresolvedTypeNode;
 import org.pkl.core.runtime.Identifier;
 import org.pkl.core.runtime.VmObjectLike;
 
@@ -46,10 +47,11 @@ public abstract sealed class AbstractInvokeLexicalOrQualifiedMethodNode
   protected AbstractInvokeLexicalOrQualifiedMethodNode(
       SourceSection sourceSection,
       Identifier methodName,
+      UnresolvedTypeNode @Nullable [] unresolvedTypeArgumentNodes,
       ExpressionNode[] argumentNodes,
       boolean needsConst,
       boolean argsRequireInference) {
-    super(sourceSection, argumentNodes, argsRequireInference);
+    super(sourceSection, unresolvedTypeArgumentNodes, argumentNodes, argsRequireInference);
     this.methodName = methodName;
     this.needsConst = needsConst;
     this.isConstChecked = false;
@@ -59,7 +61,7 @@ public abstract sealed class AbstractInvokeLexicalOrQualifiedMethodNode
     checkConst(owner);
     var method = getMethod(owner);
     var args = evalArgs(frame, method, owner, receiver);
-    return getCallNode(method, owner).call(args);
+    return getCallNode(frame, method).call(args);
   }
 
   private void checkConst(VmObjectLike owner) {
@@ -75,10 +77,11 @@ public abstract sealed class AbstractInvokeLexicalOrQualifiedMethodNode
 
   protected abstract void doCheckConst(VmObjectLike owner);
 
-  protected DirectCallNode getCallNode(Method method, VmObjectLike owner) {
+  protected DirectCallNode getCallNode(VirtualFrame frame, Method method) {
     if (callNode == null) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
-      callNode = DirectCallNode.create(method.getCallTarget(getSourceSection(), owner));
+      var functionNode = instantiateFunction(frame, method, method.getFunctionNode(sourceSection));
+      callNode = DirectCallNode.create(functionNode.getCallTarget());
       insert(callNode);
     }
     assert callNode != null;

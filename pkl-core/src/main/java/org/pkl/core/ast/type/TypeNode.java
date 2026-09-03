@@ -42,7 +42,6 @@ import org.pkl.core.PType;
 import org.pkl.core.PType.StringLiteral;
 import org.pkl.core.PklBugException;
 import org.pkl.core.StackFrame;
-import org.pkl.core.TypeParameter;
 import org.pkl.core.ast.*;
 import org.pkl.core.ast.expression.primary.GetModuleNode;
 import org.pkl.core.ast.expression.primary.GetReceiverClassNode;
@@ -256,8 +255,6 @@ public abstract class TypeNode extends PklNode {
   public abstract static class FrameSlotTypeNode extends TypeNode {
     @CompilationFinal protected int slot = -1;
 
-    @CompilationFinal @Child protected @Nullable WriteFrameSlotNode writeFrameSlotNode;
-
     protected FrameSlotTypeNode(SourceSection sourceSection) {
       super(sourceSection);
     }
@@ -266,7 +263,6 @@ public abstract class TypeNode extends PklNode {
     public TypeNode initWriteSlotNode(int slot) {
       CompilerDirectives.transferToInterpreterAndInvalidate();
       this.slot = slot;
-      writeFrameSlotNode = WriteFrameSlotNodeGen.create(sourceSection, slot, null);
       return this;
     }
   }
@@ -505,6 +501,7 @@ public abstract class TypeNode extends PklNode {
     @Child private ExpressionNode getTargetNode;
     private final PType pType;
     private final VmObjectFactory<Void> mirrorFactory;
+    @CompilationFinal private @Nullable VirtualFrame realFrame;
 
     private NonFinalSelfTypeNode(
         SourceSection sourceSection,
@@ -533,9 +530,17 @@ public abstract class TypeNode extends PklNode {
           sourceSection, clazz, new GetReceiverNode(), PType.THIS, MirrorFactories.thisTypeFactory);
     }
 
+    public void initRealFrame(VirtualFrame frame) {
+      assert realFrame == null;
+      CompilerDirectives.transferToInterpreterAndInvalidate();
+      realFrame = frame;
+    }
+
     @Override
     protected Object executeLazily(VirtualFrame frame, Object value) {
-      var clazz = ((VmObjectLike) getTargetNode.executeGeneric(frame)).getVmClass();
+      var clazz =
+          ((VmObjectLike) getTargetNode.executeGeneric(realFrame != null ? realFrame : frame))
+              .getVmClass();
 
       if (value instanceof VmTyped typed) {
         var valueClass = typed.getVmClass();
@@ -579,7 +584,9 @@ public abstract class TypeNode extends PklNode {
         VmLanguage language,
         SourceSection headerSection,
         String qualifiedName) {
-      var clazz = ((VmObjectLike) getTargetNode.executeGeneric(frame)).getVmClass();
+      var clazz =
+          ((VmObjectLike) getTargetNode.executeGeneric(realFrame != null ? realFrame : frame))
+              .getVmClass();
       return TypeNode.createDefaultValue(clazz);
     }
   }
@@ -2440,16 +2447,19 @@ public abstract class TypeNode extends PklNode {
   }
 
   public static final class TypeVariableNode extends WriteFrameSlotTypeNode {
-    private final TypeParameter typeParameter;
+    private final VmTypeParameter typeParameter;
 
-    public TypeVariableNode(SourceSection sourceSection, TypeParameter typeParameter) {
-
+    public TypeVariableNode(SourceSection sourceSection, VmTypeParameter typeParameter) {
       super(sourceSection);
       this.typeParameter = typeParameter;
     }
 
-    public int getTypeParameterIndex() {
-      return typeParameter.getIndex();
+    public VmTypeParameter getTypeParameter() {
+      return typeParameter;
+    }
+
+    public int getFrameSlot() {
+      return slot;
     }
 
     @Override
@@ -2479,7 +2489,7 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     protected PType doExport() {
-      return new PType.TypeVariable(typeParameter);
+      return new PType.TypeVariable(typeParameter.export());
     }
 
     @Override

@@ -16,10 +16,12 @@
 package org.pkl.core.ast.expression.member;
 
 import com.oracle.truffle.api.source.SourceSection;
+import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.VmModifier;
 import org.pkl.core.ast.member.Method;
 import org.pkl.core.ast.member.ObjectMethodNode;
+import org.pkl.core.ast.type.UnresolvedTypeNode;
 import org.pkl.core.runtime.Identifier;
 import org.pkl.core.runtime.VmObjectLike;
 
@@ -29,10 +31,18 @@ public final class InvokeLexicalObjectMethodNode extends AbstractInvokeLexicalMe
       SourceSection sourceSection,
       Identifier methodName,
       int levelsUp,
+      UnresolvedTypeNode @Nullable [] unresolvedTypeArgumentNodes,
       ExpressionNode[] argumentNodes,
       boolean needsConst,
       boolean argsRequireInference) {
-    super(sourceSection, methodName, levelsUp, argumentNodes, needsConst, argsRequireInference);
+    super(
+        sourceSection,
+        methodName,
+        levelsUp,
+        unresolvedTypeArgumentNodes,
+        argumentNodes,
+        needsConst,
+        argsRequireInference);
   }
 
   @Override
@@ -48,8 +58,8 @@ public final class InvokeLexicalObjectMethodNode extends AbstractInvokeLexicalMe
   protected Method getMethod(VmObjectLike owner) {
     var member = owner.getMember(methodName);
     assert member != null && member.isLocal();
-    var method = (ObjectMethodNode) member.getMemberNode();
-    assert method != null;
-    return method;
+    var methodNode = (ObjectMethodNode) member.getMemberNode();
+    assert methodNode != null;
+    return methodNode.reify(owner);
   }
 }

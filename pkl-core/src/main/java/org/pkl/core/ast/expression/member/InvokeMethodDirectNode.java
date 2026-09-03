@@ -15,11 +15,14 @@
  */
 package org.pkl.core.ast.expression.member;
 
+import com.oracle.truffle.api.CompilerDirectives;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.member.ClassMethod;
+import org.pkl.core.ast.type.UnresolvedTypeNode;
 import org.pkl.core.runtime.VmObjectLike;
 
 /** A non-virtual ("direct") method call. Used only for methods on {@code pkl:base}. */
@@ -28,25 +31,37 @@ public final class InvokeMethodDirectNode extends AbstractInvokeMethodNode {
   private final VmObjectLike owner;
   @Child private ExpressionNode receiverNode;
 
-  @Child private DirectCallNode callNode;
+  @Child private @Nullable DirectCallNode callNode;
 
   public InvokeMethodDirectNode(
       SourceSection sourceSection,
       ClassMethod method,
       ExpressionNode receiverNode,
+      UnresolvedTypeNode @Nullable [] unresolvedTypeArgumentNodes,
       ExpressionNode[] argumentNodes,
       boolean argsRequireInference) {
-    super(sourceSection, argumentNodes, argsRequireInference);
+    super(sourceSection, unresolvedTypeArgumentNodes, argumentNodes, argsRequireInference);
     this.method = method;
     this.owner = method.getOwner();
     this.receiverNode = receiverNode;
 
-    callNode = DirectCallNode.create(method.getCallTarget(sourceSection));
+    callNode =
+        unresolvedTypeArgumentNodes == null
+            ? DirectCallNode.create(method.getCallTarget(sourceSection))
+            : null;
+  }
+
+  private DirectCallNode getCallNode(VirtualFrame frame) {
+    if (callNode != null) return callNode;
+    CompilerDirectives.transferToInterpreterAndInvalidate();
+    var functionNode = instantiateFunction(frame, method, method.getFunctionNode(sourceSection));
+    callNode = DirectCallNode.create(functionNode.getCallTarget());
+    return callNode;
   }
 
   @Override
   public Object executeGeneric(VirtualFrame frame) {
     var args = evalArgs(frame, method, owner, receiverNode.executeGeneric(frame));
-    return callNode.call(args);
+    return getCallNode(frame).call(args);
   }
 }

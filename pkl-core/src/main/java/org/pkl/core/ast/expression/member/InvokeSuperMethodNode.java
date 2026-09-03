@@ -21,8 +21,11 @@ import com.oracle.truffle.api.dsl.Specialization;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.member.ClassMethod;
+import org.pkl.core.ast.member.FunctionNode;
+import org.pkl.core.ast.type.UnresolvedTypeNode;
 import org.pkl.core.runtime.Identifier;
 import org.pkl.core.runtime.VmFunction;
 import org.pkl.core.runtime.VmUtils;
@@ -34,10 +37,11 @@ public abstract class InvokeSuperMethodNode extends AbstractInvokeMethodNode {
   protected InvokeSuperMethodNode(
       SourceSection sourceSection,
       Identifier methodName,
+      UnresolvedTypeNode @Nullable [] unresolvedTypeArgumentNodes,
       ExpressionNode[] argumentNodes,
       boolean needsConst,
       boolean argsRequireInference) {
-    super(sourceSection, argumentNodes, argsRequireInference);
+    super(sourceSection, unresolvedTypeArgumentNodes, argumentNodes, argsRequireInference);
     this.needsConst = needsConst;
 
     assert !methodName.isLocalMethod();
@@ -49,7 +53,13 @@ public abstract class InvokeSuperMethodNode extends AbstractInvokeMethodNode {
   protected Object eval(
       VirtualFrame frame,
       @Cached(value = "findSupermethod(frame)", neverDefault = true) ClassMethod supermethod,
-      @Cached("create(supermethod.getCallTarget(sourceSection))") DirectCallNode callNode) {
+      @Cached(
+              value =
+                  "instantiateFunction(frame, supermethod, supermethod.getFunctionNode(sourceSection))",
+              neverDefault = true)
+          @SuppressWarnings("unused")
+          FunctionNode functionNode,
+      @Cached("create(functionNode.getCallTarget())") DirectCallNode callNode) {
     var args =
         evalArgs(frame, supermethod, supermethod.getOwner(), VmUtils.getReceiverOrNull(frame));
     return callNode.call(args);
