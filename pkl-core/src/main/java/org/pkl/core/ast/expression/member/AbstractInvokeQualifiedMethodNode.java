@@ -31,8 +31,9 @@ public abstract sealed class AbstractInvokeQualifiedMethodNode
       Identifier methodName,
       ExpressionNode[] argumentNodes,
       boolean needsConst,
-      ExpressionNode getReceiverNode) {
-    super(sourceSection, methodName, argumentNodes, needsConst);
+      ExpressionNode getReceiverNode,
+      boolean argsRequireInference) {
+    super(sourceSection, methodName, argumentNodes, needsConst, argsRequireInference);
     this.getReceiverNode = getReceiverNode;
   }
 

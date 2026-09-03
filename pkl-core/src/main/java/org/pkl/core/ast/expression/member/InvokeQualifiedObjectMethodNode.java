@@ -30,8 +30,15 @@ public final class InvokeQualifiedObjectMethodNode extends AbstractInvokeQualifi
       Identifier methodName,
       ExpressionNode[] argumentNodes,
       boolean needsConst,
-      ExpressionNode getReceiverNode) {
-    super(sourceSection, methodName, argumentNodes, needsConst, getReceiverNode);
+      ExpressionNode getReceiverNode,
+      boolean argsRequireInference) {
+    super(
+        sourceSection,
+        methodName,
+        argumentNodes,
+        needsConst,
+        getReceiverNode,
+        argsRequireInference);
   }
 
   @Override

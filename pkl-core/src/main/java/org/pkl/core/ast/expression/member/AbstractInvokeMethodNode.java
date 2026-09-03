@@ -28,10 +28,13 @@ import org.pkl.core.runtime.VmUtils;
 public abstract class AbstractInvokeMethodNode extends ExpressionNode {
 
   @Children protected final ExpressionNode[] argumentNodes;
+  protected final boolean argsRequireInference;
 
-  public AbstractInvokeMethodNode(SourceSection sourceSection, ExpressionNode[] argumentNodes) {
+  public AbstractInvokeMethodNode(
+      SourceSection sourceSection, ExpressionNode[] argumentNodes, boolean argsRequireInference) {
     super(sourceSection);
     this.argumentNodes = argumentNodes;
+    this.argsRequireInference = argsRequireInference;
   }
 
   @TruffleBoundary
@@ -44,10 +47,13 @@ public abstract class AbstractInvokeMethodNode extends ExpressionNode {
   @ExplodeLoop
   protected Object[] evalArgs(
       VirtualFrame frame, @Nullable Method method, Object owner, @Nullable Object receiver) {
-    // TODO: optimize this away when the call does not contain any implicit new args
-    var methodSlot = getMethodSlot(frame.getFrameDescriptor());
-    var prevMethod = frame.getAuxiliarySlot(methodSlot);
-    frame.setAuxiliarySlot(methodSlot, method);
+    int methodSlot = -1;
+    Object prevMethod = null;
+    if (argsRequireInference) {
+      methodSlot = getMethodSlot(frame.getFrameDescriptor());
+      prevMethod = frame.getAuxiliarySlot(methodSlot);
+      frame.setAuxiliarySlot(methodSlot, method);
+    }
 
     var args = new Object[2 + argumentNodes.length];
     args[0] = receiver;
@@ -58,7 +64,9 @@ public abstract class AbstractInvokeMethodNode extends ExpressionNode {
         args[2 + i] = argumentNodes[i].executeGeneric(frame);
       }
     } finally {
-      frame.setAuxiliarySlot(methodSlot, prevMethod);
+      if (argsRequireInference) {
+        frame.setAuxiliarySlot(methodSlot, prevMethod);
+      }
     }
 
     return args;

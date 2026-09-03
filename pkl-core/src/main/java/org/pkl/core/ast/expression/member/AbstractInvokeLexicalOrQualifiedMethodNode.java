@@ -47,8 +47,9 @@ public abstract sealed class AbstractInvokeLexicalOrQualifiedMethodNode
       SourceSection sourceSection,
       Identifier methodName,
       ExpressionNode[] argumentNodes,
-      boolean needsConst) {
-    super(sourceSection, argumentNodes);
+      boolean needsConst,
+      boolean argsRequireInference) {
+    super(sourceSection, argumentNodes, argsRequireInference);
     this.methodName = methodName;
     this.needsConst = needsConst;
     this.isConstChecked = false;
