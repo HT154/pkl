@@ -18,8 +18,10 @@ package org.pkl.core.ast.expression.member;
 import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.DirectCallNode;
 import com.oracle.truffle.api.source.SourceSection;
+import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.ExpressionNode;
 import org.pkl.core.ast.member.ClassMethod;
+import org.pkl.core.ast.type.UnresolvedTypeNode;
 import org.pkl.core.runtime.VmObjectLike;
 
 /** A non-virtual ("direct") method call. Used only for methods on {@code pkl:base}. */
@@ -34,9 +36,10 @@ public final class InvokeMethodDirectNode extends AbstractInvokeMethodNode {
       SourceSection sourceSection,
       ClassMethod method,
       ExpressionNode receiverNode,
+      UnresolvedTypeNode @Nullable [] unresolvedTypeArgumentNodes,
       ExpressionNode[] argumentNodes,
       boolean argsRequireInference) {
-    super(sourceSection, argumentNodes, argsRequireInference);
+    super(sourceSection, unresolvedTypeArgumentNodes, argumentNodes, argsRequireInference);
     this.method = method;
     this.owner = method.getOwner();
     this.receiverNode = receiverNode;
