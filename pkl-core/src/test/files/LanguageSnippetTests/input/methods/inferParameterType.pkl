@@ -16,7 +16,12 @@ class Qux extends Foo {
   function bar(baz: Foo): Int = thisBar(new { x = baz.x })
 }
 
+class Quux {
+  function selfType(arg: this): String = arg.getClass().toString()
+}
+
 function bar(baz: Foo): Int = baz.x
+function selfType(arg: this): String = arg.getClass().toString()
 
 const function outerMethod(a: Int, b: Qux) = a + b.x * 2
 
@@ -41,6 +46,9 @@ intrinsicConstructor = test.catch(() -> List(new {}))
 genericMethod = test.catch(() -> Pair(new {}, new {}))
 fnApply = test.catch(() -> quux.apply(new {}))
 tooManyParams = test.catch(() -> bar(new {}, new {}))
+finalSelfType = test.catch(() -> new Quux {}.selfType(new {}))
+nonFinalSelfType1 = test.catch(() -> selfType(new {}))
+nonFinalSelfType2 = test.catch(() -> new Qux {}.selfType(new {}))
 
 class Bar1 { x: Int = 1 }
 class Bar2 { x: Int = 2 }

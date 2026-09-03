@@ -85,4 +85,18 @@ public abstract class InferParentWithinMethodArgumentNode
     var typeNode = getTypeNode(frame, method);
     return getDefaultValue(frame, typeNode, method.getHeaderSection(), method.getQualifiedName());
   }
+
+  @Override
+  protected Object getDefaultValue(
+      VirtualFrame frame,
+      @Nullable TypeNode typeNode,
+      SourceSection headerSection,
+      String qualifiedName) {
+    if (typeNode != null && typeNode.isSelfType()) {
+      CompilerDirectives.transferToInterpreter();
+      throw exceptionBuilder().evalError("cannotInferParent").build();
+    }
+
+    return super.getDefaultValue(frame, typeNode, headerSection, qualifiedName);
+  }
 }
