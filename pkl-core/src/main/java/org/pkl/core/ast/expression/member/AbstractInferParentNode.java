@@ -36,7 +36,7 @@ public abstract class AbstractInferParentNode extends ExpressionNode {
     this.language = language;
   }
 
-  protected final Object getDefaultValue(
+  protected Object getDefaultValue(
       VirtualFrame frame,
       @Nullable TypeNode typeNode,
       SourceSection headerSection,

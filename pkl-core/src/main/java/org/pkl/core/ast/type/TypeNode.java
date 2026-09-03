@@ -155,6 +155,20 @@ public abstract class TypeNode extends PklNode {
     return ret.get();
   }
 
+  public final boolean isSelfType() {
+    var ret = new MutableBoolean(false);
+    acceptTypeNode(
+        true,
+        typeNode -> {
+          if (typeNode instanceof NonFinalSelfTypeNode || typeNode instanceof FinalSelfTypeNode) {
+            ret.set(true);
+            return false;
+          }
+          return true;
+        });
+    return ret.get();
+  }
+
   /** Visit child type nodes of this type. */
   protected abstract boolean acceptTypeNode(boolean visitTypeArguments, TypeNodeConsumer consumer);
 
