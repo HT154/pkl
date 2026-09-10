@@ -52,6 +52,8 @@ import org.pkl.core.ast.member.ListingOrMappingTypeCastNode;
 import org.pkl.core.ast.member.ObjectMember;
 import org.pkl.core.ast.member.UntypedObjectMemberNode;
 import org.pkl.core.runtime.*;
+import org.pkl.core.runtime.VmType.NothingType;
+import org.pkl.core.runtime.VmType.UnknownType;
 import org.pkl.core.stdlib.VmObjectFactory;
 import org.pkl.core.util.EconomicMaps;
 import org.pkl.core.util.EconomicSets;
@@ -60,7 +62,7 @@ import org.pkl.core.util.MutableBoolean;
 import org.pkl.core.util.MutableReference;
 
 public abstract class TypeNode extends PklNode {
-  private @Nullable VmType type;
+  @CompilationFinal private @Nullable VmType type;
 
   /** Type node that corresponds to a user-defined class (or module class). */
   public interface UserClassTypeNode {
@@ -75,13 +77,14 @@ public abstract class TypeNode extends PklNode {
 
   public VmType getType() {
     if (type == null) {
+      CompilerDirectives.transferToInterpreterAndInvalidate();
       type = doGetType();
     }
     return type;
   }
 
   @Override
-  public Node deepCopy() {
+  public final Node deepCopy() {
     // Reset cached type after deepCopy
     // This avoids incorrect getType() returns in this case:
     // ```
@@ -316,7 +319,7 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     protected VmType doGetType() {
-      return VmType.UNKNOWN;
+      return UnknownType.INSTANCE;
     }
 
     @Override
@@ -348,7 +351,7 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     protected VmType doGetType() {
-      return VmType.NOTHING;
+      return NothingType.INSTANCE;
     }
 
     @Override
@@ -1705,7 +1708,7 @@ public abstract class TypeNode extends PklNode {
     }
 
     protected VmClass getVmClass() {
-      return ((VmType.ClassType) getType()).getVmClass();
+      return BaseModule.getFunctionNClass(parameterTypeNodes.length);
     }
 
     @SuppressWarnings("unused")
@@ -1717,7 +1720,7 @@ public abstract class TypeNode extends PklNode {
 
     @Fallback
     protected Object fallback(Object value) {
-      throw typeMismatch(value, ((VmType.ClassType) getType()).getVmClass());
+      throw typeMismatch(value, getVmClass());
     }
   }
 
@@ -1776,7 +1779,7 @@ public abstract class TypeNode extends PklNode {
     }
 
     protected VmClass getVmClass() {
-      return ((VmType.ClassType) getType()).getVmClass();
+      return BaseModule.getFunctionNClass(typeArgumentNodes.length - 1);
     }
 
     @SuppressWarnings("unused")
@@ -1788,7 +1791,7 @@ public abstract class TypeNode extends PklNode {
 
     @Fallback
     protected Object fallback(Object value) {
-      throw typeMismatch(value, ((VmType.ClassType) getType()).getVmClass());
+      throw typeMismatch(value, getVmClass());
     }
 
     @Override
@@ -2075,7 +2078,6 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     protected final Object executeLazily(VirtualFrame frame, Object value) {
-      var typeAlias = ((VmType.AliasType) getType()).getVmTypeAlias();
       if (value instanceof Long l) {
         if ((l & mask) == l) return value;
 
@@ -2356,7 +2358,8 @@ public abstract class TypeNode extends PklNode {
     protected VmType doGetType() {
       return new VmType.ConstrainedType(
           childNode.getType(),
-          Arrays.stream(constraintNodes).map(TypeConstraintNode::export).toArray(String[]::new));
+          Arrays.stream(constraintNodes).map(TypeConstraintNode::export).toArray(String[]::new),
+          System.identityHashCode(this));
     }
 
     @Override
@@ -2658,7 +2661,7 @@ public abstract class TypeNode extends PklNode {
         type = typeAliasType.getAliasedType();
       }
 
-      if (type == VmType.UNKNOWN || type instanceof VmType.TypeVariableType) {
+      if (type == UnknownType.INSTANCE || type instanceof VmType.TypeVariableType) {
         clazz = BaseModule.getAnyClass();
       } else if (!type.isParametric()) {
         clazz = type.getVmClass();
