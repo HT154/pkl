@@ -19,8 +19,12 @@ import com.oracle.truffle.api.frame.MaterializedFrame;
 import com.oracle.truffle.api.nodes.RootNode;
 import org.jspecify.annotations.Nullable;
 import org.pkl.core.ast.expression.primary.ExecuteTypeArgumentCheckNode;
-import org.pkl.core.ast.type.TypeNode;
+import org.pkl.core.ast.member.FunctionNode;
 
+/**
+ * Type argument information passed from a type argument (in a method call) as an argument to a
+ * {@link FunctionNode}.
+ */
 public class VmTypeArgument {
 
   private final MaterializedFrame enclosingFrame;
@@ -42,17 +46,11 @@ public class VmTypeArgument {
             value);
   }
 
-  public MaterializedFrame getEnclosingFrame() {
-    return enclosingFrame;
-  }
-
-  public TypeNode getTypeNode() {
-    // assumption: ExecuteTypeArgumentCheckNode is the only child of rootNode
-    return ((ExecuteTypeArgumentCheckNode) rootNode.getChildren().iterator().next()).getTypeNode();
-  }
-
   public VmType resolveType() {
-    var type = getTypeNode().getType();
+    // assumption: ExecuteTypeArgumentCheckNode is the only child of rootNode
+    var typeNode =
+        ((ExecuteTypeArgumentCheckNode) rootNode.getChildren().iterator().next()).getTypeNode();
+    var type = typeNode.getType();
     var newType = type.reify(enclosingFrame);
     while (type != newType) {
       type = newType;
