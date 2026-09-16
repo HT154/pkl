@@ -42,8 +42,12 @@ public class VmTypeArgument {
             value);
   }
 
+  public MaterializedFrame getEnclosingFrame() {
+    return enclosingFrame;
+  }
+
   public TypeNode getTypeNode() {
-    // assumption: ExecuteTypeArgumentCheckNode is the only child of rootNode 
+    // assumption: ExecuteTypeArgumentCheckNode is the only child of rootNode
     return ((ExecuteTypeArgumentCheckNode) rootNode.getChildren().iterator().next()).getTypeNode();
   }
 

@@ -26,8 +26,8 @@ import org.pkl.core.stdlib.ExternalMethod2Node;
 public class RefNodes {
   public abstract static class Reference extends ExternalMethod2Node {
     @Specialization
-    protected VmReference eval(VirtualFrame frame,
-        @SuppressWarnings("unused") VmTyped self, VmTyped domain, Object data) {
+    protected VmReference eval(
+        VirtualFrame frame, @SuppressWarnings("unused") VmTyped self, VmTyped domain, Object data) {
       var fn = (FunctionNode) getParent();
       var returnTypeNode = (ReferenceTypeNode) fn.getReturnTypeNode();
       assert returnTypeNode != null;
