@@ -28,6 +28,7 @@ import com.oracle.truffle.api.frame.VirtualFrame;
 import com.oracle.truffle.api.nodes.ExplodeLoop;
 import com.oracle.truffle.api.nodes.LoopNode;
 import com.oracle.truffle.api.nodes.Node;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.jspecify.annotations.Nullable;
 import org.pkl.core.PType;
 import org.pkl.core.PklBugException;
 import org.pkl.core.ast.*;
+import org.pkl.core.ast.expression.primary.ExecuteTypeArgumentCheckNode;
 import org.pkl.core.ast.expression.primary.GetModuleNode;
 import org.pkl.core.ast.expression.primary.GetReceiverClassNode;
 import org.pkl.core.ast.expression.primary.GetReceiverNode;
@@ -2025,9 +2027,9 @@ public abstract class TypeNode extends PklNode {
 
     @Override
     protected Object executeLazily(VirtualFrame frame, Object value) {
-      if (isMethodTypeParameter() && frame.getArguments()[2] != null) {
-        var methodTypeArgs = (VmTypeArgument[]) frame.getArguments()[2];
-        var typeArg = methodTypeArgs[typeParameter.getIndex()];
+      if (isFrameParameterized() && frame.getArguments()[2] != null) {
+        var typeArgs = (VmTypeArgument[]) frame.getArguments()[2];
+        var typeArg = typeArgs[typeParameter.getIndex()];
         return typeArg.check(value);
       }
 
@@ -2040,8 +2042,9 @@ public abstract class TypeNode extends PklNode {
       return consumer.accept(this);
     }
 
-    private boolean isMethodTypeParameter() {
-      return typeParameter.getOwner() instanceof Method;
+    private boolean isFrameParameterized() {
+      return typeParameter.getOwner() instanceof Method
+          || typeParameter.getOwner() instanceof VmTypeAlias;
     }
   }
 
@@ -2227,10 +2230,12 @@ public abstract class TypeNode extends PklNode {
     }
   }
 
-  public static final class TypeAliasTypeNode extends TypeNode {
+  public static final class TypeAliasTypeNode extends WriteFrameSlotTypeNode {
     private final VmTypeAlias typeAlias;
     private final TypeNode[] typeArgumentNodes;
-    @Child private TypeNode aliasedTypeNode;
+    private final RootNode @Nullable [] typeArgumentRootNodes;
+    private final boolean typeArgumentsNeedMaterializedFrame;
+    @Child private @Nullable TypeNode aliasedTypeNode;
 
     public TypeAliasTypeNode(
         SourceSection sourceSection, VmTypeAlias typeAlias, TypeNode[] typeArgumentNodes) {
@@ -2241,40 +2246,48 @@ public abstract class TypeNode extends PklNode {
         throw exceptionBuilder().evalError("cyclicTypeAlias").build();
       }
 
-      if (typeArgumentNodes.length > 0
-          && typeArgumentNodes.length != typeAlias.getTypeParameterCount()) {
-        CompilerDirectives.transferToInterpreter();
-        throw exceptionBuilder()
-            .evalError(
-                "wrongTypeArgumentCount",
-                typeAlias.getTypeParameterCount(),
-                typeArgumentNodes.length)
-            .build();
+      if (typeArgumentNodes.length > 0) {
+        if (typeArgumentNodes.length != typeAlias.getTypeParameterCount()) {
+          CompilerDirectives.transferToInterpreter();
+          throw exceptionBuilder()
+              .evalError(
+                  "wrongTypeArgumentCount",
+                  typeAlias.getTypeParameterCount(),
+                  typeArgumentNodes.length)
+              .build();
+        }
+        var language = VmLanguage.get(this);
+        var needFrame = false;
+        typeArgumentRootNodes = new RootNode[typeArgumentNodes.length];
+        for (var i = 0; i < typeArgumentNodes.length; i++) {
+          typeArgumentRootNodes[i] =
+              new SimpleRootNode(
+                  language,
+                  FrameDescriptor.newBuilder().build(),
+                  sourceSection,
+                  "TODO",
+                  new ExecuteTypeArgumentCheckNode(sourceSection, typeArgumentNodes[i]),
+                  true);
+          needFrame = needFrame || typeArgumentNodes[i].getTypeArgumentRequiresFrame();
+        }
+        typeArgumentsNeedMaterializedFrame = needFrame;
+      } else {
+        typeArgumentRootNodes = null;
+        typeArgumentsNeedMaterializedFrame = false;
       }
 
       this.typeAlias = typeAlias;
       this.typeArgumentNodes = typeArgumentNodes;
-      aliasedTypeNode = typeAlias.instantiate(typeArgumentNodes);
     }
 
     @Override
     protected VmType doGetType() {
-      return new VmType.AliasType(typeAlias, toTypes(typeArgumentNodes), aliasedTypeNode.getType());
+      return new VmType.AliasType(
+          typeAlias, toTypes(typeArgumentNodes), getAliasedTypeNode().getType());
     }
 
     public VmTypeAlias getTypeAlias() {
       return typeAlias;
-    }
-
-    @Override
-    public FrameSlotKind getFrameSlotKind() {
-      return aliasedTypeNode.getFrameSlotKind();
-    }
-
-    @Override
-    public TypeNode initWriteSlotNode(int slot) {
-      aliasedTypeNode.initWriteSlotNode(slot);
-      return this;
     }
 
     @Override
@@ -2287,19 +2300,40 @@ public abstract class TypeNode extends PklNode {
       return getMirrors(typeArgumentNodes);
     }
 
+    private TypeNode getAliasedTypeNode() {
+      if (aliasedTypeNode == null) {
+        CompilerDirectives.transferToInterpreterAndInvalidate();
+        aliasedTypeNode = typeAlias.instantiate(typeArgumentNodes);
+      }
+      return aliasedTypeNode;
+    }
+
+    private VmTypeArgument @Nullable [] getTypeArguments(VirtualFrame frame) {
+      if (typeArgumentRootNodes == null) return null;
+
+      var argFrame = typeArgumentsNeedMaterializedFrame ? null : frame.materialize();
+      var typeArgs = new VmTypeArgument[typeArgumentRootNodes.length];
+      for (var i = 0; i < typeArgs.length; i++) {
+        var rootNode = typeArgumentRootNodes[i];
+        typeArgs[i] = new VmTypeArgument(rootNode, argFrame);
+      }
+      return typeArgs;
+    }
+
     protected Object executeLazily(VirtualFrame frame, Object value) {
-      return aliasedTypeNode.executeLazily(frame, value);
+      return typeAlias
+          .getTypeCheckRootNode()
+          .getCallTarget()
+          .call(frame.getArguments()[0], frame.getArguments()[1], getTypeArguments(frame), value);
     }
 
     /** See docstring on {@link TypeAliasTypeNode#executeLazily}. */
     @Override
     public Object executeEagerly(VirtualFrame frame, Object value) {
-      return aliasedTypeNode.executeEagerly(frame, value);
-    }
-
-    @Override
-    public Object executeAndSet(VirtualFrame frame, Object value) {
-      return aliasedTypeNode.executeAndSet(frame, value);
+      return typeAlias
+          .getTypeCheckRootNode()
+          .getCallTarget()
+          .call(frame.getArguments()[0], frame.getArguments()[1], getTypeArguments(frame), value);
     }
 
     @TruffleBoundary
@@ -2335,12 +2369,28 @@ public abstract class TypeNode extends PklNode {
         return newMixin(language, qualifiedName);
       }
 
-      return aliasedTypeNode.createDefaultValue(frame, language, headerSection, qualifiedName);
+      return getAliasedTypeNode().createDefaultValue(frame, language, headerSection, qualifiedName);
     }
 
     @Override
+    @ExplodeLoop
     protected boolean acceptTypeNode(boolean visitTypeArguments, TypeNodeConsumer consumer) {
-      return consumer.accept(this) && aliasedTypeNode.acceptTypeNode(visitTypeArguments, consumer);
+      if (!consumer.accept(this) || !visitTypeArguments) {
+        return false;
+      }
+      var ret = true;
+      // don't break early to ensure constant number of iterations
+      //noinspection ForLoopReplaceableByForEach
+      for (var i = 0; i < typeArgumentNodes.length; i++) {
+        if (!ret) {
+          continue;
+        }
+        if (!typeArgumentNodes[i].acceptTypeNode(visitTypeArguments, consumer)) {
+          ret = false;
+        }
+      }
+      LoopNode.reportLoopCount(this, typeArgumentNodes.length);
+      return ret;
     }
   }
 

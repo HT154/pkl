@@ -41,7 +41,7 @@ public abstract class AbstractInvokeMethodNode extends ExpressionNode {
   @CompilationFinal(dimensions = 1)
   protected RootNode @Nullable [] typeArgumentRootNodes;
 
-  @CompilationFinal int typeArgumentsNeedingMaterializedFrames = 0;
+  @CompilationFinal boolean typeArgumentsNeedMaterializedFrame = false;
 
   protected final boolean argsRequireInference;
 
@@ -90,9 +90,8 @@ public abstract class AbstractInvokeMethodNode extends ExpressionNode {
                   "TODO",
                   new ExecuteTypeArgumentCheckNode(sourceSection, typeNode),
                   true);
-          if (typeNode.getTypeArgumentRequiresFrame()) {
-            typeArgumentsNeedingMaterializedFrames |= 1 << i;
-          }
+          typeArgumentsNeedMaterializedFrame =
+              typeArgumentsNeedMaterializedFrame || typeNode.getTypeArgumentRequiresFrame();
         }
         typeArgumentRootNodes = rootNodes;
         unresolvedTypeArgumentNodes = null;
@@ -108,15 +107,11 @@ public abstract class AbstractInvokeMethodNode extends ExpressionNode {
     var rootNodes = getTypeArgumentRootNodes(frame, method);
     if (rootNodes == null) return null;
 
+    var argFrame = typeArgumentsNeedMaterializedFrame ? null : frame.materialize();
     var typeArgs = new VmTypeArgument[rootNodes.length];
     for (var i = 0; i < typeArgs.length; i++) {
       var rootNode = rootNodes[i];
-      typeArgs[i] =
-          new VmTypeArgument(
-              rootNode,
-              (0 != (typeArgumentsNeedingMaterializedFrames & 1 << i))
-                  ? frame.materialize()
-                  : null);
+      typeArgs[i] = new VmTypeArgument(rootNode, argFrame);
     }
     return typeArgs;
   }

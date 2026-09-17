@@ -18,7 +18,9 @@ package org.pkl.core.runtime;
 import com.google.errorprone.annotations.concurrent.GuardedBy;
 import com.oracle.truffle.api.CompilerDirectives.TruffleBoundary;
 import com.oracle.truffle.api.frame.Frame;
+import com.oracle.truffle.api.frame.FrameDescriptor;
 import com.oracle.truffle.api.frame.MaterializedFrame;
+import com.oracle.truffle.api.nodes.RootNode;
 import com.oracle.truffle.api.source.SourceSection;
 import java.net.URI;
 import java.util.ArrayList;
@@ -28,7 +30,9 @@ import org.pkl.core.Member.SourceLocation;
 import org.pkl.core.PClassInfo;
 import org.pkl.core.PObject;
 import org.pkl.core.TypeAlias;
+import org.pkl.core.ast.SimpleRootNode;
 import org.pkl.core.ast.VmModifier;
+import org.pkl.core.ast.expression.primary.ExecuteTypeArgumentCheckNode;
 import org.pkl.core.ast.type.TypeNode;
 import org.pkl.core.ast.type.TypeNode.ConstrainedTypeNode;
 import org.pkl.core.ast.type.TypeNode.TypeVariableNode;
@@ -48,6 +52,7 @@ public final class VmTypeAlias extends VmValue {
   private final MaterializedFrame enclosingFrame;
 
   private @Nullable TypeNode typeNode;
+  private @Nullable RootNode typeCheckRootNode;
 
   @GuardedBy("pTypeAliasLock")
   private @Nullable TypeAlias __pTypeAlias;
@@ -87,6 +92,14 @@ public final class VmTypeAlias extends VmValue {
 
   public void initTypeCheckNode(TypeNode typeNode) {
     this.typeNode = typeNode;
+    typeCheckRootNode =
+        new SimpleRootNode(
+            VmLanguage.get(typeNode),
+            FrameDescriptor.newBuilder().build(),
+            sourceSection,
+            qualifiedName,
+            new ExecuteTypeArgumentCheckNode(sourceSection, typeNode),
+            true);
   }
 
   public SourceSection getHeaderSection() {
@@ -176,6 +189,11 @@ public final class VmTypeAlias extends VmValue {
   public TypeNode getTypeNode() {
     assert typeNode != null;
     return typeNode;
+  }
+
+  public RootNode getTypeCheckRootNode() {
+    assert typeCheckRootNode != null;
+    return typeCheckRootNode;
   }
 
   public Frame getEnclosingFrame() {
