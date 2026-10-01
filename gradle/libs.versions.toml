@@ -12,7 +12,7 @@ geantyref = "2.0.1"
 #noinspection UnusedVersionCatalogEntry
 googleJavaFormat = "1.35.0"
 graalVm = "25.2.4"
-graalVmJdkVersion = "25.0.4"
+graalVmJdkVersion = "25.0.4.1.1"
 #noinspection UnusedVersionCatalogEntry
 graalVmInnovation = "2"
 # slightly hacky but convenient place so we remember to update the checksum
